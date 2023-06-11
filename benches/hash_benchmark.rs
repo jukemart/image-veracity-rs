@@ -1,6 +1,6 @@
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, SamplingMode};
 use std::fs::File;
 use std::io::{BufReader, Read};
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId, SamplingMode};
 
 use glob::glob;
 use image_veracity::hash::hash_image;
@@ -31,13 +31,19 @@ fn create_resource_bench(c: &mut Criterion, group_name: &str, pattern: &str) {
                 let mut file_reader = BufReader::new(file);
                 let mut img_bytes = Vec::new();
 
-                file_reader.read_to_end(&mut img_bytes).expect("image file should be readable");
-                group.bench_with_input(BenchmarkId::new("phash_image", display.as_str()), &img_bytes, |b, img| {
-                    b.iter(|| {
-                        hash_image(img).expect("image to be valid");
-                    });
-                });
-            },
+                file_reader
+                    .read_to_end(&mut img_bytes)
+                    .expect("image file should be readable");
+                group.bench_with_input(
+                    BenchmarkId::new("phash_image", display.as_str()),
+                    &img_bytes,
+                    |b, img| {
+                        b.iter(|| {
+                            hash_image(img).expect("image to be valid");
+                        });
+                    },
+                );
+            }
             Err(e) => println!("{:?}", e),
         }
     }
@@ -47,4 +53,3 @@ fn create_resource_bench(c: &mut Criterion, group_name: &str, pattern: &str) {
 
 criterion_group!(benches, jpg_benchmark, png_benchmark);
 criterion_main!(benches);
-

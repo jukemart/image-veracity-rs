@@ -1,0 +1,33 @@
+### Send a form with small jpg image
+POST {{address}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test_22kb.jpg"
+Content-Type: image/jpeg
+
+< ../../resources/test/test_22kb.jpg
+--WebAppBoundary--
+
+### Send a form with large jpg image
+POST {{address}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test_3590kb.jpg"
+Content-Type: image/jpeg
+
+< ../../resources/test/test_3590kb.jpg
+--WebAppBoundary--
+
+
+### Send a form with large, complex jpg image
+POST {{address}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test_2890kb.jpg"
+Content-Type: image/jpeg
+
+< ../../resources/test/test_2890kb.jpg
+--WebAppBoundary--
