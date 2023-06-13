@@ -9,6 +9,8 @@ members = ["trillian"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+trillian-client = { path = "./trillian" }
+eyre = "0.6.8"
 axum = { version = "0.6.18", features = ["multipart", "macros"] }
 futures = "0.3"
 tokio = { version = "1.0", features = ["full"] }

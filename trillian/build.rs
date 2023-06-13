@@ -1,7 +1,7 @@
 fn main() {
     tonic_build::configure()
         .build_server(false)
-        .out_dir("src/api")
+        .out_dir("src/client")
         .compile(
             &[
                 "proto/trillian/trillian_admin_api.proto",

@@ -5,9 +5,10 @@ use aide::{
     axum::{routing::post_with, ApiRouter, IntoApiResponse},
     transform::TransformOperation,
 };
-use axum::extract::{DefaultBodyLimit, Multipart};
+use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Html;
+use trillian_client::client::TrillianClient;
 
 const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
 
@@ -53,7 +54,10 @@ fn show_form_docs(op: TransformOperation) -> TransformOperation {
         .response_with::<200, (), _>(|res| res.description("Form upload HTML"))
 }
 
-async fn accept_form(mut multipart: Multipart) -> impl IntoApiResponse {
+async fn accept_form(
+    State(AppState { mut trillian }): State<AppState>,
+    mut multipart: Multipart,
+) -> impl IntoApiResponse {
     while let Some(field) = match multipart.next_field().await {
         Ok(x) => x,
         Err(_) => return (StatusCode::BAD_REQUEST, Json(VeracityHash::default())),
@@ -65,6 +69,14 @@ async fn accept_form(mut multipart: Multipart) -> impl IntoApiResponse {
         };
 
         return if let Ok(hash) = server::stream_to_file(&file_name, field).await {
+            trillian
+                .add_leaf(
+                    &8714315099456006839,
+                    hash.crypto_hash.as_bytes(),
+                    hash.perceptual_hash.as_bytes(),
+                )
+                .await
+                .unwrap();
             (StatusCode::CREATED, Json(hash))
         } else {
             (StatusCode::BAD_REQUEST, Json(VeracityHash::default()))

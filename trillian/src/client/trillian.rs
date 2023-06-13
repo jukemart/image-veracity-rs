@@ -1,5 +1,3 @@
-// Generated from build.rs with tonic-build
-
 /// Represents a tree.
 /// Readonly attributes are assigned at tree creation, after which they may not
 /// be modified.

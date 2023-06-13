@@ -8,6 +8,7 @@ use aide::{
 };
 use axum::http::StatusCode;
 use axum::Extension;
+use eyre::Result;
 use image_veracity::{
     docs::docs_routes, errors::AppError, extractors::Json, server::routes, state::AppState,
 };
@@ -19,11 +20,11 @@ use uuid::Uuid;
 const UPLOADS_DIRECTORY: &str = "uploads";
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "image_veracity=debug,hyper=info".into()),
+                .unwrap_or_else(|_| "image_veracity=debug,trillian_client=debug,hyper=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -34,7 +35,8 @@ async fn main() {
 
     aide::gen::extract_schemas(true);
 
-    let state = AppState::default();
+    // TODO replace with ENV var
+    let state = AppState::new("http://localhost:8090".to_string()).await?;
     let mut api = OpenApi::default();
 
     // Save files to separate directory to not override files in current directory
@@ -70,6 +72,7 @@ async fn main() {
         Ok(_) => info!("Server shut down successfully"),
         Err(e) => error!("Could not shutdown server: {}", e.to_string()),
     };
+    Ok(())
 }
 
 async fn shutdown_signal() {
