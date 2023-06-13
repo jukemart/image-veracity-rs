@@ -1,12 +1,5 @@
 use eyre::Result;
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
-
-use crate::hash::VeracityHash;
 use trillian_client::client::TrillianClient;
-use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct AppState {

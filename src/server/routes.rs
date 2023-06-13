@@ -8,7 +8,6 @@ use aide::{
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Html;
-use trillian_client::client::TrillianClient;
 
 const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
 
