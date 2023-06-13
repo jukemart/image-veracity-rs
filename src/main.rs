@@ -9,11 +9,7 @@ use aide::{
 use axum::http::StatusCode;
 use axum::Extension;
 use image_veracity::{
-    server::routes,
-    extractors::Json,
-    errors::AppError,
-    docs::docs_routes,
-    state::AppState,
+    docs::docs_routes, errors::AppError, extractors::Json, server::routes, state::AppState,
 };
 use tokio::{io::ErrorKind, signal};
 use tracing::{debug, error, info};

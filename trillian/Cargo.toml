@@ -1,0 +1,25 @@
+[package]
+name = "trillian_client"
+version = "0.1.0"
+edition = "2021"
+authors = ["J. Kerry Martin"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "trillian_client_cli"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.3", features = ["derive"] }
+tonic = "0.9.2"
+tonic-types = "0.9.2"
+prost = "0.11.9"
+prost-types = "0.11.9"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+tonic-build = { version = "0.9.2", features = ["prost"]  }
+
