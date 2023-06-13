@@ -1,18 +1,6 @@
-[submodule "src/trillian/trillian"]
-	path = src/trillian/trillian
-	url = https://github.com/google/trillian
-[submodule "src/trillian/googleapis"]
-	path = src/trillian/googleapis
-	url = https://github.com/googleapis/googleapis
-[submodule "src/trillian/proto/trillian"]
-	path = src/trillian/proto/trillian
-	url = https://github.com/google/trillian
-[submodule "src/trillian/proto/--force"]
-	path = src/trillian/proto/--force
-	url = https://github.com/google/trillian
-[submodule "src/trillian/proto/googleapis"]
-	path = src/trillian/proto/googleapis
-	url = https://github.com/googleapis/googleapis
 [submodule "trillian/proto/googleapis"]
 	path = trillian/proto/googleapis
 	url = https://github.com/googleapis/googleapis
+[submodule "trillian/proto/trillian"]
+	path = trillian/proto/trillian
+	url = https://github.com/google/trillian
