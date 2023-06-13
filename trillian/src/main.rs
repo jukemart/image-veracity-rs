@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use eyre::Result;
 use tokio;
 use tracing::{debug, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -79,7 +80,7 @@ struct AddLeafArgs {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let args = Cli::parse();
 
     // Set verbosity level
