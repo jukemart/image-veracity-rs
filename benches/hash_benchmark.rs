@@ -1,8 +1,9 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, SamplingMode};
 use std::fs::File;
 use std::io::{BufReader, Read};
 
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, SamplingMode};
 use glob::glob;
+
 use image_veracity::hash::hash_image;
 
 fn jpg_benchmark(c: &mut Criterion) {

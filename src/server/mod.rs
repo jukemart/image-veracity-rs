@@ -1,14 +1,16 @@
-pub mod routes;
+use std::io;
 
-use crate::hash::{hash_image, VeracityHash};
 use axum::body::Bytes;
 use axum::http::StatusCode;
 use axum::BoxError;
 use futures::{Stream, TryStreamExt};
-use std::io;
 use tokio::io::AsyncReadExt;
 use tokio_util::io::StreamReader;
 use tracing::{debug, error};
+
+use crate::hash::{hash_image, VeracityHash};
+
+pub mod routes;
 
 async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<VeracityHash, (StatusCode, String)>
 where

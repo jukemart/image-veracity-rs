@@ -1,6 +1,3 @@
-use crate::hash::VeracityHash;
-use crate::server;
-use crate::{extractors::Json, state::AppState};
 use aide::{
     axum::{routing::post_with, ApiRouter, IntoApiResponse},
     transform::TransformOperation,
@@ -8,6 +5,10 @@ use aide::{
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Html;
+
+use crate::hash::VeracityHash;
+use crate::server;
+use crate::{extractors::Json, state::AppState};
 
 const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
 

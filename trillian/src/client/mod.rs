@@ -7,14 +7,14 @@ use tonic::transport::{Channel, Endpoint, Uri};
 use tonic::{Request, Status};
 use tracing::{debug, error, instrument, trace};
 
-use crate::client::trillian::trillian_admin_client::TrillianAdminClient;
-use crate::client::trillian::trillian_log_client::TrillianLogClient;
-use crate::client::trillian::{
-    CreateTreeRequest, ListTreesRequest, LogLeaf, QueueLeafRequest, Tree, TreeState, TreeType,
+use crate::{
+    protobuf::trillian,
+    protobuf::trillian::trillian_admin_client::TrillianAdminClient,
+    protobuf::trillian::trillian_log_client::TrillianLogClient,
+    protobuf::trillian::{
+        CreateTreeRequest, ListTreesRequest, LogLeaf, QueueLeafRequest, Tree, TreeState, TreeType,
+    },
 };
-
-mod google;
-mod trillian;
 
 #[derive(Builder)]
 #[builder(
@@ -81,7 +81,6 @@ impl TrillianClient {
         Ok(TrillianClientBuilder {
             admin_client: Some(admin_client),
             log_client: Some(log_client),
-            ..TrillianClientBuilder::empty()
         })
     }
 
@@ -114,7 +113,7 @@ impl TrillianClient {
     #[instrument(skip(self))]
     pub async fn create_tree(&mut self, name: &str, description: &str) -> Result<Tree> {
         trace!("Creating create_tree_request");
-        let request = create_tree_request(&name, &description);
+        let request = create_tree_request(name, description);
 
         trace!("Sending request {:?}", request);
         let response = match self.admin_client.create_tree(request).await {
@@ -132,7 +131,7 @@ impl TrillianClient {
 
         // New trees must be initialized by a log_client
         let request = Request::new(trillian::InitLogRequest {
-            log_id: tree.tree_id.clone(),
+            log_id: tree.tree_id,
             charge_to: None,
         });
         match self.log_client.init_log(request).await {
@@ -156,7 +155,7 @@ impl TrillianClient {
         data: &[u8],
         extra_data: &[u8],
     ) -> Result<LogLeaf> {
-        let request = form_leaf(tree_id.clone(), data, extra_data);
+        let request = form_leaf(*tree_id, data, extra_data);
         let response = match self.log_client.queue_leaf(request).await {
             Ok(x) => {
                 trace!("Received response {:?}", x);

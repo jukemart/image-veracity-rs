@@ -1,3 +1,5 @@
+use std::io::Cursor;
+
 use base64::engine::general_purpose;
 use base64::Engine;
 use blockhash::blockhash256;
@@ -7,7 +9,6 @@ use image::{DynamicImage, ImageError, ImageFormat};
 use ring::digest::{digest, SHA256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::io::Cursor;
 use tracing::error;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -66,10 +67,11 @@ pub fn crypto_image(image: &DynamicImage) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use blockhash::Blockhash256;
     use image::EncodableLayout;
     use ring::test;
+
+    use super::*;
 
     #[test]
     fn blockhash_persistent_hash() {

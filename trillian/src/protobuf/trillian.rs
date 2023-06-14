@@ -346,8 +346,8 @@ pub struct UndeleteTreeRequest {
 /// Generated client implementations.
 pub mod trillian_admin_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     /// Trillian Administrative interface.
     /// Allows creation and management of Trillian trees.
     #[derive(Debug, Clone)]
@@ -393,8 +393,9 @@ pub mod trillian_admin_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             TrillianAdminClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -433,15 +434,23 @@ pub mod trillian_admin_client {
         pub async fn list_trees(
             &mut self,
             request: impl tonic::IntoRequest<super::ListTreesRequest>,
-        ) -> std::result::Result<tonic::Response<super::ListTreesResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ListTreesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/ListTrees");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/ListTrees",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "ListTrees"));
@@ -452,14 +461,19 @@ pub mod trillian_admin_client {
             &mut self,
             request: impl tonic::IntoRequest<super::GetTreeRequest>,
         ) -> std::result::Result<tonic::Response<super::Tree>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/GetTree");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/GetTree",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "GetTree"));
@@ -473,14 +487,19 @@ pub mod trillian_admin_client {
             &mut self,
             request: impl tonic::IntoRequest<super::CreateTreeRequest>,
         ) -> std::result::Result<tonic::Response<super::Tree>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/CreateTree");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/CreateTree",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "CreateTree"));
@@ -492,14 +511,19 @@ pub mod trillian_admin_client {
             &mut self,
             request: impl tonic::IntoRequest<super::UpdateTreeRequest>,
         ) -> std::result::Result<tonic::Response<super::Tree>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/UpdateTree");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/UpdateTree",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "UpdateTree"));
@@ -512,14 +536,19 @@ pub mod trillian_admin_client {
             &mut self,
             request: impl tonic::IntoRequest<super::DeleteTreeRequest>,
         ) -> std::result::Result<tonic::Response<super::Tree>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/DeleteTree");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/DeleteTree",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "DeleteTree"));
@@ -532,14 +561,19 @@ pub mod trillian_admin_client {
             &mut self,
             request: impl tonic::IntoRequest<super::UndeleteTreeRequest>,
         ) -> std::result::Result<tonic::Response<super::Tree>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianAdmin/UndeleteTree");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianAdmin/UndeleteTree",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianAdmin", "UndeleteTree"));
@@ -868,8 +902,8 @@ pub struct LogLeaf {
 /// Generated client implementations.
 pub mod trillian_log_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     /// The TrillianLog service provides access to an append-only Log data structure
     /// as described in the [Verifiable Data
     /// Structures](docs/papers/VerifiableDataStructures.pdf) paper.
@@ -941,8 +975,9 @@ pub mod trillian_log_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             TrillianLogClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -982,15 +1017,23 @@ pub mod trillian_log_client {
         pub async fn queue_leaf(
             &mut self,
             request: impl tonic::IntoRequest<super::QueueLeafRequest>,
-        ) -> std::result::Result<tonic::Response<super::QueueLeafResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::QueueLeafResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianLog/QueueLeaf");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/QueueLeaf",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianLog", "QueueLeaf"));
@@ -1004,17 +1047,23 @@ pub mod trillian_log_client {
         pub async fn get_inclusion_proof(
             &mut self,
             request: impl tonic::IntoRequest<super::GetInclusionProofRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetInclusionProofResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GetInclusionProofResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/trillian.TrillianLog/GetInclusionProof");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/GetInclusionProof",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianLog", "GetInclusionProof"));
@@ -1032,21 +1081,24 @@ pub mod trillian_log_client {
             tonic::Response<super::GetInclusionProofByHashResponse>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/trillian.TrillianLog/GetInclusionProofByHash",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new(
-                "trillian.TrillianLog",
-                "GetInclusionProofByHash",
-            ));
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("trillian.TrillianLog", "GetInclusionProofByHash"),
+                );
             self.inner.unary(req, path, codec).await
         }
         /// GetConsistencyProof returns a consistency proof between different sizes of
@@ -1057,22 +1109,26 @@ pub mod trillian_log_client {
         pub async fn get_consistency_proof(
             &mut self,
             request: impl tonic::IntoRequest<super::GetConsistencyProofRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetConsistencyProofResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GetConsistencyProofResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/trillian.TrillianLog/GetConsistencyProof");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/GetConsistencyProof",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new(
-                "trillian.TrillianLog",
-                "GetConsistencyProof",
-            ));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("trillian.TrillianLog", "GetConsistencyProof"));
             self.inner.unary(req, path, codec).await
         }
         /// GetLatestSignedLogRoot returns the latest log root for a given tree,
@@ -1088,21 +1144,24 @@ pub mod trillian_log_client {
             tonic::Response<super::GetLatestSignedLogRootResponse>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/trillian.TrillianLog/GetLatestSignedLogRoot",
             );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new(
-                "trillian.TrillianLog",
-                "GetLatestSignedLogRoot",
-            ));
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("trillian.TrillianLog", "GetLatestSignedLogRoot"),
+                );
             self.inner.unary(req, path, codec).await
         }
         /// GetEntryAndProof returns a log leaf and the corresponding inclusion proof
@@ -1114,17 +1173,23 @@ pub mod trillian_log_client {
         pub async fn get_entry_and_proof(
             &mut self,
             request: impl tonic::IntoRequest<super::GetEntryAndProofRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetEntryAndProofResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GetEntryAndProofResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/trillian.TrillianLog/GetEntryAndProof");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/GetEntryAndProof",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianLog", "GetEntryAndProof"));
@@ -1135,15 +1200,23 @@ pub mod trillian_log_client {
         pub async fn init_log(
             &mut self,
             request: impl tonic::IntoRequest<super::InitLogRequest>,
-        ) -> std::result::Result<tonic::Response<super::InitLogResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::InitLogResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/trillian.TrillianLog/InitLog");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/InitLog",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianLog", "InitLog"));
@@ -1154,22 +1227,26 @@ pub mod trillian_log_client {
         pub async fn add_sequenced_leaves(
             &mut self,
             request: impl tonic::IntoRequest<super::AddSequencedLeavesRequest>,
-        ) -> std::result::Result<tonic::Response<super::AddSequencedLeavesResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::AddSequencedLeavesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/trillian.TrillianLog/AddSequencedLeaves");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/AddSequencedLeaves",
+            );
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new(
-                "trillian.TrillianLog",
-                "AddSequencedLeaves",
-            ));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("trillian.TrillianLog", "AddSequencedLeaves"));
             self.inner.unary(req, path, codec).await
         }
         /// GetLeavesByRange returns a batch of leaves whose leaf indices are in a
@@ -1177,17 +1254,23 @@ pub mod trillian_log_client {
         pub async fn get_leaves_by_range(
             &mut self,
             request: impl tonic::IntoRequest<super::GetLeavesByRangeRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetLeavesByRangeResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GetLeavesByRangeResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/trillian.TrillianLog/GetLeavesByRange");
+            let path = http::uri::PathAndQuery::from_static(
+                "/trillian.TrillianLog/GetLeavesByRange",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("trillian.TrillianLog", "GetLeavesByRange"));

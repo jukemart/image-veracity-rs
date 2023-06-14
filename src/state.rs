@@ -1,4 +1,5 @@
 use eyre::Result;
+
 use trillian_client::client::TrillianClient;
 
 #[derive(Clone)]

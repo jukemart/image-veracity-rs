@@ -9,13 +9,14 @@ use aide::{
 use axum::http::StatusCode;
 use axum::Extension;
 use eyre::Result;
-use image_veracity::{
-    docs::docs_routes, errors::AppError, extractors::Json, server::routes, state::AppState,
-};
 use tokio::{io::ErrorKind, signal};
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
+
+use image_veracity::{
+    docs::docs_routes, errors::AppError, extractors::Json, server::routes, state::AppState,
+};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
