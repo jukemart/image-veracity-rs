@@ -7,7 +7,7 @@ fn main() {
                 "proto/trillian/trillian_admin_api.proto",
                 "proto/trillian/trillian_log_api.proto",
             ],
-            &["proto/trillian", "proto/googleapis"],
+            &["proto/trillian", "proto/trillian/third_party/googleapis"],
         )
         .unwrap();
 }

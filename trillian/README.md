@@ -7,14 +7,11 @@ First get Google API and Google Trillian Protobufs:
 ```shell
 cd proto
 
-git submodule add -f https://github.com/googleapis/googleapis
-
 git submodule add -f https://github.com/google/trillian
 
 git submodule update --remote
 
-git config submodule.googleapis.active false
-git config submodule.trillian.active false
+git config submodule.trillian/proto/trillian.active false
 ```
 
 Workaround warning: 
