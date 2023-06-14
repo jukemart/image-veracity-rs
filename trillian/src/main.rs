@@ -1,7 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use eyre::Result;
-use tokio;
-use tracing::{debug, info};
+use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use trillian_client::client::TrillianClient;
@@ -86,8 +85,7 @@ async fn main() -> Result<()> {
     // Set verbosity level
     let verbosity_level = match args.verbose {
         0 => "warn",
-        1 => "info",
-        2 => "debug",
+        1 => "debug",
         _ => "trace",
     };
 
@@ -101,9 +99,10 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    info!("Verbosity level: {verbosity_level}");
+    debug!("Verbosity level: {verbosity_level}");
 
     let mut trillian = TrillianClient::new(args.address).await?.build();
+    debug!("Created Trillian client");
 
     match &args.submodule {
         Submodules::Admin(admin_args) => {
@@ -126,6 +125,7 @@ async fn main() -> Result<()> {
         Submodules::Client(client_args) => {
             let client_command = &client_args.client_commands;
             debug!("Log client command {:?}", client_command);
+
             match &client_args.client_commands {
                 ClientCommands::AddLeaf(AddLeafArgs {
                     tree_id,
