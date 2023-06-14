@@ -1,0 +1,51 @@
+# fly.toml app configuration file generated for veracity-dev-trillian-log on 2023-06-14T17:34:39-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "veracity-dev-trillian-log"
+primary_region = "bos"
+
+[build]
+dockerfile = "Dockerfile"
+
+[deploy]
+strategy = "immediate"
+
+[processes]
+log-server = "/trillian_log_server --storage_system=crdb --crdb_uri=postgresql://zaphod@veracity-dev-us-east-1-11356.7tt.cockroachlabs.cloud:26257/veracity?sslmode=verify-full&sslrootcert=/root.crt --quota_system=crdb --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --alsologtostderr"
+log-signer = "/trillian_log_signer --storage_system=crdb --crdb_uri=postgresql://zaphod@veracity-dev-us-east-1-11356.7tt.cockroachlabs.cloud:26257/veracity?sslmode=verify-full&sslrootcert=/root.crt --quota_system=crdb --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --num_sequencers=1 --sequencer_interval=3s --force_master --alsologtostderr"
+
+[[services]]
+protocol = "tcp"
+internal_port = 8090
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 2
+processes = ["log-server"]
+
+[[services]]
+protocol = "tcp"
+internal_port = 8091
+processes = ["log-server"]
+
+[[services.ports]]
+port = 8091
+handlers = ["http"]
+
+[[services]]
+protocol = "tcp"
+internal_port = 8090
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 2
+processes = ["log-signer"]
+
+[[services]]
+protocol = "tcp"
+internal_port = 8091
+processes = ["log-signer"]
+
+[[services.ports]]
+port = 8091
+handlers = ["http"]
