@@ -10,6 +10,8 @@ services:
       - MYSQL_USER=test
       - MYSQL_PASSWORD=zaphod
     restart: always # keep the MySQL server running
+    ports:
+      - "3306:3306"
   trillian-log-server:
     build:
       context: ../proto/trillian
