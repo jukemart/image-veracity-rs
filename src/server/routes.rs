@@ -72,8 +72,8 @@ async fn accept_form(
             trillian
                 .add_leaf(
                     &8714315099456006839,
-                    hash.crypto_hash.as_bytes(),
-                    hash.perceptual_hash.as_bytes(),
+                    hash.crypto_hash.to_string().as_bytes(),
+                    hash.perceptual_hash.to_string().as_bytes(),
                 )
                 .await
                 .unwrap();
@@ -89,9 +89,12 @@ fn accept_form_docs(op: TransformOperation) -> TransformOperation {
     op.description("Return a veracity hash")
         .response_with::<201, Json<VeracityHash>, _>(|res| {
             res.example(VeracityHash {
-                perceptual_hash: "9cfde03dc4198467ad671d171c071c5b1ff81bf919d9181838f8f890f807ff01"
-                    .to_string(),
-                crypto_hash: "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U".to_string(),
+                perceptual_hash: "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U"
+                    .try_into()
+                    .unwrap(),
+                crypto_hash: "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U"
+                    .try_into()
+                    .unwrap(),
             })
         })
         .response_with::<400, (), _>(|res| res.description("could not process request"))
