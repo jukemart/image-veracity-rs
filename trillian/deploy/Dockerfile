@@ -24,6 +24,5 @@ RUN go run github.com/google/go-licenses save ./cmd/trillian_log_server --save_p
 FROM gcr.io/distroless/base
 
 COPY --from=build /go/bin/trillian_log_server /
+COPY --from=build /go/bin/trillian_log_signer /
 COPY --from=build /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
-
-ENTRYPOINT ["/trillian_log_server"]

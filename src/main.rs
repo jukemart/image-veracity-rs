@@ -8,7 +8,7 @@ use aide::{
 };
 use axum::http::StatusCode;
 use axum::Extension;
-use eyre::Result;
+use eyre::{Report, Result};
 use tokio::{io::ErrorKind, signal};
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -36,10 +36,26 @@ async fn main() -> Result<()> {
     aide::gen::extract_schemas(true);
 
     // TODO replace with ENV var
-    let state = AppStateBuilder::create_trillian_client("http://localhost:8090".to_string())
-        .await?
-        .trillian_tree(9157806580963803309)
-        .build();
+    let state = AppStateBuilder::create_trillian_client(
+        std::env::var("TRILLIAN_ADDRESS").map_err(|err| {
+            error!("Could not get TRILLIAN_ADDRESS: {}", err);
+            Report::from(err)
+        })?,
+    )
+    .await?
+    .trillian_tree(
+        std::env::var("TRILLIAN_TREE")
+            .map_err(|err| {
+                error!("Could not get TRILLIAN_TREE: {}", err);
+                Report::from(err)
+            })?
+            .parse::<i64>()
+            .map_err(|err| {
+                error!("Could not parse TRILLIAN_TREE: {}", err);
+                Report::from(err)
+            })?,
+    )
+    .build();
     let mut api = OpenApi::default();
 
     // Save files to separate directory to not override files in current directory
