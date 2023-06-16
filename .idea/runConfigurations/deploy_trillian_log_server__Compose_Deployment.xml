@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="deploy.trillian-log-server: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
+    <deployment type="docker-compose.yml">
+      <settings>
+        <option name="composeProjectName" value="trillian-local-deploy" />
+        <option name="envFilePath" value="$PROJECT_DIR$/trillian/deploy/build.env" />
+        <option name="sourceFilePath" value="trillian/deploy/docker-compose.yml" />
+        <option name="upForceRecreate" value="true" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

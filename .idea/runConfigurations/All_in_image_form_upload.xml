@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All in image-form-upload" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/test/http/image-form-upload.http">
+    <method v="2" />
+  </configuration>
+</component>
