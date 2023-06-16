@@ -17,11 +17,7 @@ use crate::{
 };
 
 #[derive(Builder)]
-#[builder(
-    custom_constructor,
-    create_empty = "empty",
-    build_fn(private, name = "fallible_build")
-)]
+#[builder(custom_constructor, build_fn(private, name = "fallible_build"))]
 pub struct TrillianClient {
     #[builder(setter(custom))]
     admin_client: TrillianAdminClient<Channel>,

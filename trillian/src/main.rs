@@ -3,7 +3,7 @@ use eyre::Result;
 use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use trillian_client::client::TrillianClient;
+use trillian::client::TrillianClient;
 
 /// Simple Trillian Client CLI
 #[derive(Parser)]

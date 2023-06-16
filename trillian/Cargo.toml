@@ -1,5 +1,5 @@
 [package]
-name = "trillian-client"
+name = "trillian"
 version = "0.1.0"
 edition = "2021"
 authors = ["J. Kerry Martin"]

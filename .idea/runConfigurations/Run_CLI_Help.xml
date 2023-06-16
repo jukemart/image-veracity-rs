@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run CLI Help" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package trillian-client --bin trillian_client_cli -- --help" />
+    <option name="command" value="run --package trillian --bin trillian_client_cli -- --help" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />

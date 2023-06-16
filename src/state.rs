@@ -1,6 +1,6 @@
 use eyre::Result;
 
-use trillian_client::client::TrillianClient;
+use trillian::client::TrillianClient;
 
 #[derive(Clone)]
 pub struct AppState {

@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run CLI Add Leaf (some data)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package trillian-client --bin trillian_client_cli -- --address http://localhost:8090 client add-leaf --tree-id 4938350244366803007 -d &quot;Some data&quot;" />
+    <option name="command" value="run --package trillian --bin trillian_client_cli -- --address http://localhost:8090 client add-leaf --tree-id 4938350244366803007 -d &quot;Some data&quot;" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />
