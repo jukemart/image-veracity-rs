@@ -1,18 +1,22 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 use std::io::Cursor;
 
-use base64::{engine::general_purpose, Engine};
-use blockhash::{blockhash256, Blockhash256};
-use image::{
-    error::{ImageFormatHint, UnsupportedError},
-    io::Reader,
-    DynamicImage, ImageError, ImageFormat,
-};
-use ring::digest::{digest, Context, Digest, SHA256};
+use blockhash::blockhash256;
+use image::{io::Reader, DynamicImage, ImageFormat};
+use ring::digest::{digest, Digest, SHA256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::error;
+
+use crate::hash::cryptographic::CryptographicHash;
+use crate::hash::perceptual::PerceptualHash;
+use crate::hash::HashError::{
+    ImageDecodeError, ImageHashError, ImageTypeUnknown, ImageTypeUnsupported,
+};
+
+pub(crate) mod cryptographic;
+pub(crate) mod perceptual;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VeracityHash {
@@ -20,128 +24,34 @@ pub struct VeracityHash {
     pub crypto_hash: CryptographicHash,
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PerceptualHash(String);
-
-impl Display for PerceptualHash {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<Blockhash256> for PerceptualHash {
-    fn from(value: Blockhash256) -> Self {
-        let p_bytes: [u8; 32] = value.into();
-        let perceptual_b64 = general_purpose::URL_SAFE_NO_PAD.encode(p_bytes);
-        PerceptualHash(perceptual_b64)
-    }
-}
-
-impl TryFrom<&str> for PerceptualHash {
-    type Error = HashError;
-
-    fn try_from(value: &str) -> Result<PerceptualHash, HashError> {
-        if let Ok(decode) = general_purpose::URL_SAFE_NO_PAD.decode(value) {
-            let bytes: [u8; 32] = decode
-                .try_into()
-                .map_err(|decode_err: Vec<u8>| HashError::InvalidLength(decode_err.len()))?;
-            Ok(Blockhash256::from(bytes).into())
-        } else {
-            Err(HashError::InvalidHashString(value.to_string()))
-        }
-    }
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct CryptographicHash(String);
-
-impl Display for CryptographicHash {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<Digest> for CryptographicHash {
-    fn from(value: Digest) -> Self {
-        let crypto_b64 = general_purpose::URL_SAFE_NO_PAD.encode(value);
-        CryptographicHash(crypto_b64)
-    }
-}
-
-impl TryFrom<&str> for CryptographicHash {
-    type Error = HashError;
-
-    /// Attempt conversion from &str
-    ///
-    /// # Arguments
-    ///
-    /// * `value`: &str
-    ///
-    /// returns: Result<CryptographicHash, HashError>
-    ///
-    /// # Examples
-    ///
-    /// ```
-    ///
-    /// ```
-    fn try_from(value: &str) -> Result<CryptographicHash, HashError> {
-        if let Ok(decode) = general_purpose::URL_SAFE_NO_PAD.decode(value) {
-            let bytes: [u8; 32] = decode
-                .try_into()
-                .map_err(|decode_err: Vec<u8>| HashError::InvalidLength(decode_err.len()))?;
-            let mut ctx = Context::new(&SHA256);
-            ctx.update(&bytes);
-            let created_digest = ctx.finish();
-            Ok(CryptographicHash::from(created_digest))
-        } else {
-            Err(HashError::InvalidHashString(value.to_string()))
-        }
-    }
-}
-
 #[inline]
-pub fn hash_image(buffer: &[u8]) -> Result<VeracityHash, ImageError> {
-    let reader = Reader::new(Cursor::new(buffer)).with_guessed_format()?;
+pub fn hash_image(buffer: &[u8]) -> Result<VeracityHash, HashError> {
+    let reader = Reader::new(Cursor::new(buffer))
+        .with_guessed_format()
+        .map_err(|_| ImageDecodeError)?;
     match reader.format() {
         Some(ImageFormat::Jpeg | ImageFormat::Png) => match reader.decode() {
             Ok(image) => {
-                let perceptual_hash = blockhash256(&image);
-                let crypto_hash = crypto_image(&image);
+                let perceptual_hash = blockhash256(&image).into();
+                let crypto_hash = crypto_image(&image)
+                    .try_into()
+                    .map_err(|_| ImageHashError)?;
                 Ok(VeracityHash {
-                    perceptual_hash: perceptual_hash.into(),
-                    crypto_hash: crypto_hash.into(),
+                    perceptual_hash,
+                    crypto_hash,
                 })
             }
             Err(e) => {
                 error!("{}", e.to_string());
-                Err(e)
+                Err(ImageDecodeError)
             }
         },
-        Some(format) => Err(ImageError::Unsupported(UnsupportedError::from(
-            ImageFormatHint::Exact(format),
-        ))),
-        None => Err(ImageError::Unsupported(UnsupportedError::from(
-            ImageFormatHint::Unknown,
-        ))),
+        Some(format) => Err(ImageTypeUnsupported(format)),
+        None => Err(ImageTypeUnknown),
     }
 }
 
-/// Generates a 256-bit cryptographic hash of an image.
-///
-/// # Examples
-///
-/// ```
-///
-/// let img = image::open("resources/test/test_495kb.png").unwrap();
-/// let hash = image_veracity::hash::crypto_image(&img);
-///
-/// assert_eq!(
-///     hash,
-///     "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U",
-/// );
-///
-/// ```
-pub fn crypto_image(image: &DynamicImage) -> Digest {
+fn crypto_image(image: &DynamicImage) -> Digest {
     let pixels = image.as_bytes();
     default_crypto_hash(pixels)
 }
@@ -152,10 +62,20 @@ fn default_crypto_hash(pixels: &[u8]) -> Digest {
 
 #[derive(Error, Debug)]
 pub enum HashError {
+    #[error("did not recognize image type")]
+    ImageTypeUnknown,
+    #[error("image format unsupported")]
+    ImageTypeUnsupported(ImageFormat),
+    #[error("could not decode image from format")]
+    ImageDecodeError,
+    #[error("could not hash image")]
+    ImageHashError,
     #[error("hash string was not valid base64")]
-    InvalidHashString(String),
+    InvalidBase64,
     #[error("hash bytes length not 32")]
-    InvalidLength(usize),
+    InvalidLength,
+    #[error("hash string was not valid hex characters")]
+    InvalidHexCharacters,
 }
 
 #[cfg(test)]
@@ -224,9 +144,10 @@ mod tests {
         let known_hash = "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U";
 
         let img = image::open("resources/test/test_495kb.png").unwrap();
-        let crypt_hash: CryptographicHash = crypto_image(&img).into();
-
-        assert_eq!(crypt_hash.0, known_hash)
+        let crypt_hash: CryptographicHash = crypto_image(&img)
+            .try_into()
+            .expect("valid, decodable image");
+        assert_eq!(crypt_hash.to_b64(), known_hash)
     }
 
     #[test]
@@ -252,8 +173,9 @@ mod tests {
 
         let image = image::open("resources/test/test_495kb.png").unwrap();
 
-        ////Expected hash created from the test_495kb.png using Golang:
-        //package main
+        // Expected hash created from the test_495kb.png using Golang:
+        // ```golang
+        // package main
         //
         // import (
         // 	"encoding/hex"
@@ -268,16 +190,17 @@ mod tests {
         // }
         //
         // func main() {
-        // 	file1, _ := os.Open("test_495kb.png")
-        // 	defer func(file1 *os.File) {
-        // 		_ = file1.Close()
-        // 	}(file1)
+        //	file1, _ := os.Open("test_495kb.png")
+        //	defer func(file1 *os.File) {
+        //		_ = file1.Close()
+        //	}(file1)
         //
         // 	img, _ := png.Decode(file1)
         // 	rgba, _ := img.(*image.RGBA)
         // 	entry := createEntry(*rgba)
         // 	println(hex.EncodeToString(entry))
         // }
+        // ```
         let expected =
             test::from_hex("e40e70d70cde3a0edfdc74bd659869b1dccaf05ef69f897ce78b02ccb33fe227")
                 .unwrap();

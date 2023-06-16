@@ -5,6 +5,8 @@ use aide::{
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Html;
+use hex::FromHex;
+use tracing::error;
 
 use crate::hash::VeracityHash;
 use crate::server;
