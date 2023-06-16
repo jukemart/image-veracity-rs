@@ -1,3 +1,4 @@
 # Ignore the submodules
 proto/googleapis/
 proto/trillian/
+/deploy/crdb/data/
