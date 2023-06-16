@@ -9,6 +9,13 @@ Content-Type: image/jpeg
 < ../../resources/test/test_22kb.jpg
 --WebAppBoundary--
 
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 201, "Response status is not 201");
+});
+%}
+
+
 ### Send a form with large jpg image
 POST {{address}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
@@ -19,6 +26,12 @@ Content-Type: image/jpeg
 
 < ../../resources/test/test_3590kb.jpg
 --WebAppBoundary--
+
+> {%
+  client.test("Request executed successfully", function() {
+    client.assert(response.status === 201, "Response status is not 201");
+  });
+%}
 
 
 ### Send a form with large, complex jpg image
@@ -31,3 +44,9 @@ Content-Type: image/jpeg
 
 < ../../resources/test/test_2890kb.jpg
 --WebAppBoundary--
+
+> {%
+  client.test("Request executed successfully", function() {
+    client.assert(response.status === 201, "Response status is not 201");
+  });
+%}
