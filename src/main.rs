@@ -14,9 +14,8 @@ use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
 
-use image_veracity::{
-    docs::docs_routes, errors::AppError, extractors::Json, server::routes, state::AppState,
-};
+use image_veracity::state::AppStateBuilder;
+use image_veracity::{docs::docs_routes, errors::AppError, extractors::Json, server::routes};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
@@ -37,7 +36,10 @@ async fn main() -> Result<()> {
     aide::gen::extract_schemas(true);
 
     // TODO replace with ENV var
-    let state = AppState::new("http://localhost:8090".to_string()).await?;
+    let state = AppStateBuilder::create_trillian_client("http://localhost:8090".to_string())
+        .await?
+        .trillian_tree(9157806580963803309)
+        .build();
     let mut api = OpenApi::default();
 
     // Save files to separate directory to not override files in current directory

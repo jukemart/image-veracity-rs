@@ -4,3 +4,6 @@ pub mod extractors;
 pub mod hash;
 pub mod server;
 pub mod state;
+
+#[macro_use]
+extern crate derive_builder;

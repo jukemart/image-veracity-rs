@@ -8,7 +8,7 @@ use axum::response::Html;
 use hex::FromHex;
 use tracing::error;
 
-use crate::hash::VeracityHash;
+use crate::hash::{cryptographic::CryptographicHash, perceptual::PerceptualHash, VeracityHash};
 use crate::server;
 use crate::{extractors::Json, state::AppState};
 
@@ -57,7 +57,11 @@ fn show_form_docs(op: TransformOperation) -> TransformOperation {
 }
 
 async fn accept_form(
-    State(AppState { mut trillian }): State<AppState>,
+    State(AppState {
+        mut trillian,
+        trillian_tree,
+        ..
+    }): State<AppState>,
     mut multipart: Multipart,
 ) -> impl IntoApiResponse {
     while let Some(field) = match multipart.next_field().await {
@@ -71,15 +75,23 @@ async fn accept_form(
         };
 
         return if let Ok(hash) = server::stream_to_file(&file_name, field).await {
-            trillian
+            match trillian
                 .add_leaf(
-                    &8714315099456006839,
+                    &trillian_tree,
                     hash.crypto_hash.to_string().as_bytes(),
                     hash.perceptual_hash.to_string().as_bytes(),
                 )
                 .await
-                .unwrap();
-            (StatusCode::CREATED, Json(hash))
+            {
+                Ok(_) => (StatusCode::CREATED, Json(hash)),
+                Err(err) => {
+                    error!("Could not add leaf: {}", err);
+                    (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        Json(VeracityHash::default()),
+                    )
+                }
+            }
         } else {
             (StatusCode::BAD_REQUEST, Json(VeracityHash::default()))
         };
@@ -91,12 +103,14 @@ fn accept_form_docs(op: TransformOperation) -> TransformOperation {
     op.description("Return a veracity hash")
         .response_with::<201, Json<VeracityHash>, _>(|res| {
             res.example(VeracityHash {
-                perceptual_hash: "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U"
-                    .try_into()
-                    .unwrap(),
-                crypto_hash: "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U"
-                    .try_into()
-                    .unwrap(),
+                perceptual_hash: PerceptualHash::from_hex(
+                    "9cfde03dc4198467ad671d171c071c5b1ff81bf919d9181838f8f890f807ff01",
+                )
+                .unwrap(),
+                crypto_hash: CryptographicHash::from_b64(
+                    "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U",
+                )
+                .unwrap(),
             })
         })
         .response_with::<400, (), _>(|res| res.description("could not process request"))
