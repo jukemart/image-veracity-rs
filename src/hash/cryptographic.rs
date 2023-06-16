@@ -74,6 +74,12 @@ impl<'de> Deserialize<'de> for CryptographicHash {
     }
 }
 
+impl AsRef<[u8; 32]> for CryptographicHash {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
 impl Display for CryptographicHash {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", BASE64_URL_SAFE_NO_PAD.encode(self.0))

@@ -2,6 +2,7 @@ use axum::{http::StatusCode, response::IntoResponse};
 use schemars::JsonSchema;
 use serde::Serialize;
 use serde_json::Value;
+use tracing::{error, instrument};
 use uuid::Uuid;
 
 /// A default error response for most API errors.
@@ -40,7 +41,9 @@ impl AppError {
 }
 
 impl IntoResponse for AppError {
+    #[instrument]
     fn into_response(self) -> axum::response::Response {
+        error!("");
         let status = self.status;
         let mut res = axum::Json(self).into_response();
         *res.status_mut() = status;

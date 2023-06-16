@@ -8,7 +8,7 @@ use tokio::io::AsyncReadExt;
 use tokio_util::io::StreamReader;
 use tracing::{debug, error};
 
-use crate::hash::{hash_image, VeracityHash};
+use crate::hash::{hash_image, HashError, VeracityHash};
 
 pub mod routes;
 
@@ -39,25 +39,34 @@ where
             }
         }
 
-        let veracity = parallel_hash(buffer).await;
-        Ok(veracity)
+        parallel_hash(buffer).await.map_err(|err| match err {
+            HashError::ImageTypeUnknown => (StatusCode::BAD_REQUEST, err.to_string()),
+            HashError::ImageTypeUnsupported(_) => (StatusCode::BAD_REQUEST, err.to_string()),
+            HashError::ImageDecodeError => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+        })
     }
     .await
 }
 
-async fn parallel_hash(buffer: Vec<u8>) -> VeracityHash {
+async fn parallel_hash(buffer: Vec<u8>) -> Result<VeracityHash, HashError> {
     let (send, recv) = tokio::sync::oneshot::channel();
 
     // Spawn a task on rayon.
     rayon::spawn(move || {
-        if let Ok(veracity) = hash_image(&buffer) {
-            debug!(
-                "image phash {} chash {}",
-                veracity.perceptual_hash, veracity.crypto_hash
-            );
-
-            // Send the result back to Tokio.
-            let _ = send.send(veracity);
+        match hash_image(&buffer) {
+            Ok(veracity) => {
+                debug!(
+                    "image phash {} chash {}",
+                    veracity.perceptual_hash, veracity.crypto_hash
+                );
+                // Send the result back to Tokio.
+                let _ = send.send(Ok(veracity));
+            }
+            Err(err) => {
+                error!("{}", err);
+                let _ = send.send(Err(err));
+            }
         }
     });
 

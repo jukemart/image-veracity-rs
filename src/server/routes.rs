@@ -4,10 +4,11 @@ use aide::{
 };
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
-use axum::response::Html;
+use axum::response::{Html, IntoResponse, Response};
 use hex::FromHex;
-use tracing::error;
+use trillian::client::TrillianClient;
 
+use crate::errors::AppError;
 use crate::hash::{cryptographic::CryptographicHash, perceptual::PerceptualHash, VeracityHash};
 use crate::server;
 use crate::{extractors::Json, state::AppState};
@@ -66,7 +67,11 @@ async fn accept_form(
 ) -> impl IntoApiResponse {
     while let Some(field) = match multipart.next_field().await {
         Ok(x) => x,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(VeracityHash::default())),
+        Err(err) => {
+            return AppError::new(&err.to_string())
+                .with_status(StatusCode::BAD_REQUEST)
+                .into_response()
+        }
     } {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
@@ -74,29 +79,36 @@ async fn accept_form(
             continue;
         };
 
-        return if let Ok(hash) = server::stream_to_file(&file_name, field).await {
-            match trillian
-                .add_leaf(
-                    &trillian_tree,
-                    hash.crypto_hash.to_string().as_bytes(),
-                    hash.perceptual_hash.to_string().as_bytes(),
-                )
-                .await
-            {
-                Ok(_) => (StatusCode::CREATED, Json(hash)),
-                Err(err) => {
-                    error!("Could not add leaf: {}", err);
-                    (
-                        StatusCode::SERVICE_UNAVAILABLE,
-                        Json(VeracityHash::default()),
-                    )
-                }
-            }
-        } else {
-            (StatusCode::BAD_REQUEST, Json(VeracityHash::default()))
+        return match server::stream_to_file(&file_name, field).await {
+            Ok(hash) => return add_hash_to_tree(&mut trillian, &trillian_tree, hash).await,
+            Err(err) => AppError::new(err.1.as_str())
+                .with_status(err.0)
+                .into_response(),
         };
     }
-    (StatusCode::BAD_REQUEST, Json(VeracityHash::default()))
+    AppError::new("no multipart fields found")
+        .with_status(StatusCode::BAD_REQUEST)
+        .into_response()
+}
+
+async fn add_hash_to_tree(
+    trillian: &mut TrillianClient,
+    trillian_tree: &i64,
+    hash: VeracityHash,
+) -> Response {
+    match trillian
+        .add_leaf(
+            trillian_tree,
+            hash.crypto_hash.as_ref(),
+            hash.perceptual_hash.as_ref(),
+        )
+        .await
+    {
+        Ok(_) => (StatusCode::CREATED, Json(hash)).into_response(),
+        Err(err) => AppError::new(&err.to_string())
+            .with_status(StatusCode::SERVICE_UNAVAILABLE)
+            .into_response(),
+    }
 }
 
 fn accept_form_docs(op: TransformOperation) -> TransformOperation {
@@ -114,4 +126,5 @@ fn accept_form_docs(op: TransformOperation) -> TransformOperation {
             })
         })
         .response_with::<400, (), _>(|res| res.description("could not process request"))
+        .response_with::<503, (), _>(|res| res.description("downstream dependency unavailable"))
 }

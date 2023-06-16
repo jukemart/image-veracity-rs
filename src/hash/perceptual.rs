@@ -68,8 +68,14 @@ impl<'de> Deserialize<'de> for PerceptualHash {
     }
 }
 
+impl AsRef<[u8; 32]> for PerceptualHash {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
 impl Display for PerceptualHash {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self.0.encode_hex::<String>())
     }
 }
