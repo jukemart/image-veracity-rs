@@ -3,11 +3,13 @@ use eyre::Report;
 use schemars::JsonSchema;
 use serde::Serialize;
 use serde_json::Value;
+use std::fmt::{Display, Formatter};
+use thiserror::Error;
 use tracing::{error, instrument};
 use uuid::Uuid;
 
 /// A default error response for most API errors.
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Debug, Error, Serialize, JsonSchema)]
 pub struct AppError {
     /// An error message.
     pub error: String,
@@ -18,6 +20,15 @@ pub struct AppError {
     /// Optional Additional error details.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error_details: Option<Value>,
+}
+impl Display for AppError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} id:{} {} {:?}",
+            self.status, self.error_id, self.error, self.error_details
+        )
+    }
 }
 
 impl AppError {

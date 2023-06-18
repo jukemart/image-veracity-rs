@@ -8,7 +8,8 @@ use axum::response::{Html, IntoResponse};
 use eyre::Result;
 use hex::FromHex;
 use serde_json::json;
-use tracing::{error, info};
+use tracing::log::debug;
+use tracing::{error, warn};
 
 use trillian::client::TrillianClient;
 use trillian::TrillianLogLeaf;
@@ -98,7 +99,7 @@ async fn accept_form(
             }
         };
 
-        let (hash, leaf) = match add_hash_to_tree(&mut trillian, &trillian_tree, hash).await {
+        let (hash, _leaf) = match add_hash_to_tree(&mut trillian, &trillian_tree, hash).await {
             Ok(x) => x,
             Err(err) => {
                 error!("{}", err);
@@ -119,9 +120,9 @@ async fn accept_form(
         };
 
         // create the accounts and get the IDs
-        let hashes: (Vec<u8>, Vec<u8>) = match conn
+        match conn
             .query(
-                "INSERT INTO images (c_hash, p_hash) VALUES ($1, $2) RETURNING c_hash, p_hash",
+                "INSERT INTO images (c_hash, p_hash) VALUES ($1, $2)",
                 &[
                     &hash.crypto_hash.as_ref().to_vec(),
                     &hash.perceptual_hash.as_ref().to_vec(),
@@ -129,12 +130,9 @@ async fn accept_form(
             )
             .await
         {
-            Ok(result) => match &result[..] {
-                [row_hashes] => (row_hashes.get(0), row_hashes.get(1)),
-                _ => unreachable!(),
-            },
+            Ok(_) => {}
             Err(err) => {
-                error!("Could not add to database: {}", err.to_string());
+                warn!("Could not add to database: {}", err.to_string());
                 return if err.to_string().contains("duplicate") {
                     AppError::new("image already exists in database")
                         .with_status(StatusCode::CONFLICT)
@@ -145,7 +143,10 @@ async fn accept_form(
             }
         };
 
-        info!("ids {:?}", hashes);
+        debug!(
+            "added c_hash {} p_hash {}",
+            &hash.crypto_hash, &hash.perceptual_hash
+        );
         let mut res = Json(hash).into_response();
         *res.status_mut() = StatusCode::CREATED;
         return res;
