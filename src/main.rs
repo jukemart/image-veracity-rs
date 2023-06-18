@@ -1,3 +1,4 @@
+use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -14,10 +15,8 @@ use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
 
-use image_veracity::state::AppStateBuilder;
+use image_veracity::state::{AppState, AppStateBuilder};
 use image_veracity::{docs::docs_routes, errors::AppError, extractors::Json, server::routes};
-
-const UPLOADS_DIRECTORY: &str = "uploads";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -35,41 +34,35 @@ async fn main() -> Result<()> {
 
     aide::gen::extract_schemas(true);
 
-    // TODO replace with ENV var
-    let state = AppStateBuilder::create_trillian_client(
-        std::env::var("TRILLIAN_ADDRESS").map_err(|err| {
-            error!("Could not get TRILLIAN_ADDRESS: {}", err);
+    let trillian_address = env::var("TRILLIAN_ADDRESS").map_err(|err| {
+        error!("Could not get TRILLIAN_ADDRESS: {}", err);
+        Report::from(err)
+    })?;
+    let tree_id = env::var("TRILLIAN_TREE")
+        .map_err(|err| {
+            error!("Could not get TRILLIAN_TREE: {}", err);
             Report::from(err)
-        })?,
-    )
-    .await?
-    .trillian_tree(
-        std::env::var("TRILLIAN_TREE")
-            .map_err(|err| {
-                error!("Could not get TRILLIAN_TREE: {}", err);
-                Report::from(err)
-            })?
-            .parse::<i64>()
-            .map_err(|err| {
-                error!("Could not parse TRILLIAN_TREE: {}", err);
-                Report::from(err)
-            })?,
-    )
-    .build();
+        })?
+        .parse::<i64>()
+        .map_err(|err| {
+            error!("Could not parse TRILLIAN_TREE: {}", err);
+            Report::from(err)
+        })?;
+
+    let db_connection_uri = env::var("DATABASE_URL")
+        .expect("$DATABASE_URL is not set")
+        .to_owned();
+
+    let state = AppStateBuilder::default()
+        .create_trillian_client(&trillian_address)
+        .trillian_tree(tree_id)
+        .create_postgres_client(&db_connection_uri)
+        .build()
+        .await?;
     let mut api = OpenApi::default();
 
-    // Save files to separate directory to not override files in current directory
-    match tokio::fs::create_dir(UPLOADS_DIRECTORY).await {
-        Ok(_) => info!("Directory `{}` created", UPLOADS_DIRECTORY),
-        Err(err) if err.kind() == ErrorKind::AlreadyExists => {
-            info!("Directory `{}` already exists", UPLOADS_DIRECTORY)
-        }
-        Err(err) => panic!(
-            "could not create directory {}: {}",
-            UPLOADS_DIRECTORY,
-            err.to_string()
-        ),
-    }
+    // Ensure tables at startup as well as db connection works
+    create_db_tables(&state).await;
 
     let app = ApiRouter::new()
         .nest_api_service("/", routes::server_routes(state.clone()))
@@ -92,6 +85,35 @@ async fn main() -> Result<()> {
         Err(e) => error!("Could not shutdown server: {}", e.to_string()),
     };
     Ok(())
+}
+
+async fn create_db_tables(state: &AppState) {
+    let pool = &state.db_pool.clone();
+    let conn = pool.get().await.expect("database connection");
+    // Create the "images" table.
+    match conn
+        .execute(
+            "CREATE TABLE IF NOT EXISTS images (c_hash BYTES NOT NULL PRIMARY KEY, p_hash BYTES NOT NULL)",
+            &[],
+        )
+        .await {
+        Ok(result) => {
+            info!("Create table result {}", result);
+        }
+        Err(err) => error!("{}", err)
+    };
+    match conn
+        .execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS images_p_hash_index ON images (p_hash)",
+            &[],
+        )
+        .await
+    {
+        Ok(result) => {
+            info!("Create p_hash index result {}", result);
+        }
+        Err(err) => error!("{}", err),
+    }
 }
 
 async fn shutdown_signal() {

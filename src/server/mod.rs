@@ -1,9 +1,13 @@
+use aide::axum::IntoApiResponse;
 use std::io;
 
+use crate::errors::AppError;
 use axum::body::Bytes;
 use axum::http::StatusCode;
 use axum::BoxError;
+use eyre::{eyre, Error};
 use futures::{Stream, TryStreamExt};
+use serde_json::json;
 use tokio::io::AsyncReadExt;
 use tokio_util::io::StreamReader;
 use tracing::{debug, error};
@@ -12,13 +16,13 @@ use crate::hash::{hash_image, HashError, VeracityHash};
 
 pub mod routes;
 
-async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<VeracityHash, (StatusCode, String)>
+async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<VeracityHash, AppError>
 where
     S: Stream<Item = Result<Bytes, E>>,
     E: Into<BoxError>,
 {
     if !path_is_valid(path) {
-        return Err((StatusCode::BAD_REQUEST, "Invalid path".to_owned()));
+        return Err(AppError::new("Invalid path"));
     }
 
     async {
@@ -35,16 +39,21 @@ where
             Ok(_) => debug!("read multipart buffer"),
             Err(err) => {
                 error!("could not read buffer: {}", err.to_string());
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()));
+                return Err(AppError::new("could not read file to buffer")
+                    .with_details(json!(err.to_string())));
             }
         }
 
-        parallel_hash(buffer).await.map_err(|err| match err {
-            HashError::ImageTypeUnknown => (StatusCode::BAD_REQUEST, err.to_string()),
-            HashError::ImageTypeUnsupported(_) => (StatusCode::BAD_REQUEST, err.to_string()),
-            HashError::ImageDecodeError => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-        })
+        match parallel_hash(buffer).await {
+            Ok(hash) => {
+                debug!("created hash {:?}", hash);
+                Ok(hash)
+            }
+            Err(err) => {
+                error!("error while hashing {}", err.to_string());
+                Err(AppError::new(&err.to_string()))
+            }
+        }
     }
     .await
 }

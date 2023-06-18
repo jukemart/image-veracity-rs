@@ -5,8 +5,15 @@ use aide::{
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
-use hex::FromHex;
+use eyre::{Report, Result};
+use hex::{FromHex, ToHex};
+use serde_json::json;
+use tokio::pin;
+use tokio_postgres::{Error, Row};
+use tracing::{error, info};
 use trillian::client::TrillianClient;
+use trillian::TrillianLogLeaf;
+use uuid::Uuid;
 
 use crate::errors::AppError;
 use crate::hash::{cryptographic::CryptographicHash, perceptual::PerceptualHash, VeracityHash};
@@ -61,6 +68,7 @@ async fn accept_form(
     State(AppState {
         mut trillian,
         trillian_tree,
+        db_pool,
         ..
     }): State<AppState>,
     mut multipart: Multipart,
@@ -68,9 +76,10 @@ async fn accept_form(
     while let Some(field) = match multipart.next_field().await {
         Ok(x) => x,
         Err(err) => {
+            error!("{}", err);
             return AppError::new(&err.to_string())
                 .with_status(StatusCode::BAD_REQUEST)
-                .into_response()
+                .into_response();
         }
     } {
         let file_name = if let Some(file_name) = field.file_name() {
@@ -79,12 +88,71 @@ async fn accept_form(
             continue;
         };
 
-        return match server::stream_to_file(&file_name, field).await {
-            Ok(hash) => return add_hash_to_tree(&mut trillian, &trillian_tree, hash).await,
-            Err(err) => AppError::new(err.1.as_str())
-                .with_status(err.0)
-                .into_response(),
+        let hash = match server::stream_to_file(&file_name, field).await {
+            Ok(x) => x,
+            Err(err) => {
+                return AppError::new("Could not hash image")
+                    .with_details(json!(err))
+                    .with_status(StatusCode::BAD_REQUEST)
+                    .into_response();
+            }
         };
+
+        let (hash, leaf) = match add_hash_to_tree(&mut trillian, &trillian_tree, hash).await {
+            Ok(x) => x,
+            Err(err) => {
+                error!("{}", err);
+                return AppError::new("Could not add image to Trillian")
+                    .with_status(StatusCode::SERVICE_UNAVAILABLE)
+                    .into_response();
+            }
+        };
+
+        // Add leaf to DB
+        let pool = db_pool.clone();
+        let conn = match pool.get().await {
+            Ok(conn) => conn,
+            Err(err) => {
+                error!("{}", err);
+                return AppError::new("could not get database connection")
+                    .with_status(StatusCode::SERVICE_UNAVAILABLE)
+                    .into_response();
+            }
+        };
+
+        // create the accounts and get the IDs
+        let hashes: (Vec<u8>, Vec<u8>) = match conn
+            .query(
+                "INSERT INTO images (c_hash, p_hash) VALUES ($1, $2) RETURNING c_hash, p_hash",
+                &[
+                    &hash.crypto_hash.as_ref().to_vec(),
+                    &hash.perceptual_hash.as_ref().to_vec(),
+                ],
+            )
+            .await
+        {
+            Ok(result) => match &result[..] {
+                [row_hashes] => (row_hashes.get(0), row_hashes.get(1)),
+                _ => unreachable!(),
+            },
+            Err(err) => {
+                error!("Could not add to database: {}", err.to_string());
+                return if err.to_string().contains("duplicate") {
+                    AppError::new("image already exists in database")
+                        .with_status(StatusCode::CONFLICT)
+                        .into_response()
+                } else {
+                    AppError::new("could not add to database")
+                        .with_status(StatusCode::SERVICE_UNAVAILABLE)
+                        .into_response()
+                };
+            }
+        };
+
+        info!("ids {:?}", hashes);
+        let mut res = Json(hash).into_response();
+        *res.status_mut() = StatusCode::CREATED;
+        return res;
     }
     AppError::new("no multipart fields found")
         .with_status(StatusCode::BAD_REQUEST)
@@ -95,7 +163,7 @@ async fn add_hash_to_tree(
     trillian: &mut TrillianClient,
     trillian_tree: &i64,
     hash: VeracityHash,
-) -> Response {
+) -> Result<(VeracityHash, TrillianLogLeaf)> {
     match trillian
         .add_leaf(
             trillian_tree,
@@ -104,10 +172,8 @@ async fn add_hash_to_tree(
         )
         .await
     {
-        Ok(_) => (StatusCode::CREATED, Json(hash)).into_response(),
-        Err(err) => AppError::new(&err.to_string())
-            .with_status(StatusCode::SERVICE_UNAVAILABLE)
-            .into_response(),
+        Ok(leaf) => Ok((hash, leaf)),
+        Err(err) => Err(err),
     }
 }
 

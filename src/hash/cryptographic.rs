@@ -135,6 +135,10 @@ impl CryptographicHash {
     pub fn to_b64(&self) -> String {
         BASE64_URL_SAFE_NO_PAD.encode(self.0)
     }
+
+    pub fn to_hex(&self) -> String {
+        self.0.encode_hex()
+    }
 }
 
 #[cfg(test)]

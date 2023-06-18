@@ -1,4 +1,5 @@
 use axum::{http::StatusCode, response::IntoResponse};
+use eyre::Report;
 use schemars::JsonSchema;
 use serde::Serialize;
 use serde_json::Value;
@@ -48,5 +49,17 @@ impl IntoResponse for AppError {
         let mut res = axum::Json(self).into_response();
         *res.status_mut() = status;
         res
+    }
+}
+
+impl From<Report> for AppError {
+    fn from(value: Report) -> Self {
+        AppError::new(&value.to_string())
+    }
+}
+
+impl From<AppError> for Report {
+    fn from(value: AppError) -> Self {
+        Report::from(value)
     }
 }
