@@ -1,19 +1,17 @@
-use aide::axum::IntoApiResponse;
 use std::io;
 
-use crate::errors::AppError;
 use axum::body::Bytes;
-use axum::http::StatusCode;
 use axum::BoxError;
-use eyre::{eyre, Error};
 use futures::{Stream, TryStreamExt};
 use serde_json::json;
 use tokio::io::AsyncReadExt;
 use tokio_util::io::StreamReader;
 use tracing::{debug, error};
 
+use crate::errors::AppError;
 use crate::hash::{hash_image, HashError, VeracityHash};
 
+mod images;
 pub mod routes;
 
 async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<VeracityHash, AppError>

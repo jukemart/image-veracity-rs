@@ -10,7 +10,7 @@ use aide::{
 use axum::http::StatusCode;
 use axum::Extension;
 use eyre::{Report, Result};
-use tokio::{io::ErrorKind, signal};
+use tokio::signal;
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;

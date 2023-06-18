@@ -76,7 +76,7 @@ impl AsRef<[u8; 32]> for PerceptualHash {
 
 impl Display for PerceptualHash {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.0.encode_hex::<String>())
+        write!(f, "{}", &self.to_hex())
     }
 }
 
@@ -90,6 +90,16 @@ impl PartialEq<Blockhash256> for PerceptualHash {
     fn eq(&self, other: &Blockhash256) -> bool {
         let block_buffer: [u8; 32] = <Blockhash256>::into(*other);
         self.0 == block_buffer
+    }
+}
+
+impl TryFrom<Vec<u8>> for PerceptualHash {
+    type Error = HashError;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        // convert to definite-sized array
+        let buffer: [u8; 32] = value.try_into().map_err(|_| HashError::InvalidLength)?;
+        Ok(PerceptualHash(buffer))
     }
 }
 

@@ -4,26 +4,26 @@ use aide::{
 };
 use axum::extract::{DefaultBodyLimit, Multipart, State};
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
-use eyre::{Report, Result};
-use hex::{FromHex, ToHex};
+use axum::response::{Html, IntoResponse};
+use eyre::Result;
+use hex::FromHex;
 use serde_json::json;
-use tokio::pin;
-use tokio_postgres::{Error, Row};
 use tracing::{error, info};
+
 use trillian::client::TrillianClient;
 use trillian::TrillianLogLeaf;
-use uuid::Uuid;
 
 use crate::errors::AppError;
 use crate::hash::{cryptographic::CryptographicHash, perceptual::PerceptualHash, VeracityHash};
 use crate::server;
+use crate::server::images;
 use crate::{extractors::Json, state::AppState};
 
 const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
 
 pub fn server_routes(state: AppState) -> ApiRouter {
     ApiRouter::new()
+        .nest_api_service("/images", images::image_routes(state.clone()))
         .api_route(
             "/",
             post_with(accept_form, accept_form_docs).get_with(show_form, show_form_docs),
@@ -60,7 +60,7 @@ async fn show_form() -> Html<&'static str> {
 }
 
 fn show_form_docs(op: TransformOperation) -> TransformOperation {
-    op.description("Upload form an image to get veracity hashes")
+    op.description("Basic image upload form")
         .response_with::<200, (), _>(|res| res.description("Form upload HTML"))
 }
 
@@ -114,9 +114,7 @@ async fn accept_form(
             Ok(conn) => conn,
             Err(err) => {
                 error!("{}", err);
-                return AppError::new("could not get database connection")
-                    .with_status(StatusCode::SERVICE_UNAVAILABLE)
-                    .into_response();
+                return db_error().into_response();
             }
         };
 
@@ -142,9 +140,7 @@ async fn accept_form(
                         .with_status(StatusCode::CONFLICT)
                         .into_response()
                 } else {
-                    AppError::new("could not add to database")
-                        .with_status(StatusCode::SERVICE_UNAVAILABLE)
-                        .into_response()
+                    db_error().into_response()
                 };
             }
         };
@@ -191,6 +187,16 @@ fn accept_form_docs(op: TransformOperation) -> TransformOperation {
                 .unwrap(),
             })
         })
-        .response_with::<400, (), _>(|res| res.description("could not process request"))
-        .response_with::<503, (), _>(|res| res.description("downstream dependency unavailable"))
+        .response_with::<400, Json<AppError>, _>(|res| {
+            res.description("could not process request")
+                .example(AppError::new("Could not hash image").with_status(StatusCode::BAD_REQUEST))
+        })
+        .response_with::<503, Json<AppError>, _>(|res| {
+            res.description("downstream dependency unavailable")
+                .example(db_error())
+        })
+}
+
+fn db_error() -> AppError {
+    AppError::new("Could add image").with_status(StatusCode::SERVICE_UNAVAILABLE)
 }

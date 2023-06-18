@@ -57,9 +57,3 @@ impl From<Report> for AppError {
         AppError::new(&value.to_string())
     }
 }
-
-impl From<AppError> for Report {
-    fn from(value: AppError) -> Self {
-        Report::from(value)
-    }
-}

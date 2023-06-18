@@ -1,0 +1,43 @@
+### Get a non-existent image
+GET {{address}}/images/0000000000000000000000000000000000000000000000000000000000000000
+
+
+> {%
+  client.test("Request executed unsuccessfully", function() {
+    client.assert(response.status === 404, "Response status is not 404");
+  });
+%}
+
+### Send a bad request -- not even characters in hex ID
+GET {{address}}/images/00000000000000000000000000000000
+
+> {%
+  client.test("Request executed unsuccessfully", function() {
+    client.assert(response.status === 400, "Response status is not 400");
+    client.assert(response.contentType.mimeType === "application/json", "Response was not json");
+    let body = response.body;
+    client.assert(body["error"] === "Invalid id", "Response did not specify error");
+  });
+%}
+
+### Send a bad request -- not hex characters
+GET {{address}}/images/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+> {%
+  client.test("Request executed unsuccessfully", function() {
+    client.assert(response.status === 400, "Response status is not 400");
+    client.assert(response.contentType.mimeType === "application/json", "Response was not json");
+    let body = response.body;
+    client.assert(body["error"] === "Invalid id", "Response did not specify error");
+  });
+%}
+
+
+### Get a (possible) image
+GET {{address}}/images/f14b1ef1296fb0d4189e7d4debc9f26dc8134a2cd135dcba2ed16e39029d2c99
+
+> {%
+  client.test("Request executed successfully", function() {
+    client.assert(response.status === 200, "Did not have test.jpg");
+  });
+%}

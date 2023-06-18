@@ -82,7 +82,7 @@ impl AsRef<[u8; 32]> for CryptographicHash {
 
 impl Display for CryptographicHash {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", BASE64_URL_SAFE_NO_PAD.encode(self.0))
+        write!(f, "{}", self.to_hex())
     }
 }
 
@@ -90,10 +90,20 @@ impl TryFrom<Digest> for CryptographicHash {
     type Error = HashError;
 
     fn try_from(value: Digest) -> Result<Self, Self::Error> {
-        // convert to definite-sized array
+        // convert vec then to definite-sized array
         let buffer: [u8; 32] = Vec::from(value.as_ref())
             .try_into()
             .map_err(|_| HashError::InvalidLength)?;
+        Ok(CryptographicHash(buffer))
+    }
+}
+
+impl TryFrom<Vec<u8>> for CryptographicHash {
+    type Error = HashError;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        // convert to definite-sized array
+        let buffer: [u8; 32] = value.try_into().map_err(|_| HashError::InvalidLength)?;
         Ok(CryptographicHash(buffer))
     }
 }

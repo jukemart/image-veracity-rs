@@ -1,15 +1,11 @@
-use std::marker::PhantomData;
 use std::str::FromStr;
 
-use axum::body::HttpBody;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use eyre::{Error, Report, Result};
-use futures::TryFutureExt;
 use openssl::error::ErrorStack;
 use openssl::ssl::{SslConnector, SslMethod};
 use postgres_openssl::MakeTlsConnector;
-use tokio::pin;
 use tokio_postgres::config::Config;
 use tracing::{debug, error, instrument, trace};
 
@@ -17,13 +13,9 @@ use trillian::client::TrillianClient;
 
 pub type ConnectionPool = Pool<PostgresConnectionManager<MakeTlsConnector>>;
 
+#[allow(dead_code)]
 #[derive(Builder, Clone)]
-#[builder(
-// pattern = "immutable",
-//     custom_constructor,
-//     setter(into),
-build_fn(private, name = "fallible_build")
-)]
+#[builder(build_fn(private, name = "fallible_build"))]
 pub struct AppState {
     #[builder(try_setter, setter(into, name = "trillian_tree"))]
     pub trillian_tree: i64,
