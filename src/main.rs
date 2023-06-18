@@ -11,6 +11,7 @@ use axum::http::StatusCode;
 use axum::Extension;
 use eyre::{Report, Result};
 use tokio::signal;
+use tokio::time::Instant;
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
@@ -20,6 +21,8 @@ use image_veracity::{docs::docs_routes, errors::AppError, extractors::Json, serv
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let start = Instant::now();
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -71,11 +74,11 @@ async fn main() -> Result<()> {
         .layer(Extension(Arc::new(api)))
         .with_state(state);
 
-    info!("Documentation accessible at http://127.0.0.1:3000/docs");
-
     // send it
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     debug!("Listening on {}", addr);
+    let startup_duration = start.elapsed();
+    info!("Startup time: {:?}", startup_duration);
     match axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
