@@ -11,26 +11,28 @@ use serde_json::json;
 use tracing::log::debug;
 use tracing::{error, warn};
 
-use trillian::client::TrillianClient;
 use trillian::TrillianLogLeaf;
 
 use crate::errors::AppError;
 use crate::hash::{cryptographic::CryptographicHash, perceptual::PerceptualHash, VeracityHash};
-use crate::server;
 use crate::server::images;
-use crate::{extractors::Json, state::AppState};
+use crate::state::TrillianState;
+use crate::{extractors::Json, server, state::AppState};
 
 const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
 
 pub fn server_routes(state: AppState) -> ApiRouter {
+    app(&state).nest_api_service("/images", images::image_routes(state))
+}
+
+fn app(state: &AppState) -> ApiRouter {
     ApiRouter::new()
-        .nest_api_service("/images", images::image_routes(state.clone()))
         .api_route(
             "/",
             post_with(accept_form, accept_form_docs).get_with(show_form, show_form_docs),
         )
         .layer(DefaultBodyLimit::max(MAX_UPLOAD_SIZE))
-        .with_state(state)
+        .with_state(state.clone())
 }
 
 async fn show_form() -> Html<&'static str> {
@@ -67,7 +69,7 @@ fn show_form_docs(op: TransformOperation) -> TransformOperation {
 
 async fn accept_form(
     State(AppState {
-        mut trillian,
+        trillian,
         trillian_tree,
         db_pool,
         ..
@@ -99,7 +101,7 @@ async fn accept_form(
             }
         };
 
-        let (hash, _leaf) = match add_hash_to_tree(&mut trillian, &trillian_tree, hash).await {
+        let (hash, _leaf) = match add_hash_to_tree(trillian, &trillian_tree, hash).await {
             Ok(x) => x,
             Err(err) => {
                 error!("{}", err);
@@ -157,7 +159,7 @@ async fn accept_form(
 }
 
 async fn add_hash_to_tree(
-    trillian: &mut TrillianClient,
+    mut trillian: TrillianState,
     trillian_tree: &i64,
     hash: VeracityHash,
 ) -> Result<(VeracityHash, TrillianLogLeaf)> {
@@ -200,4 +202,128 @@ fn accept_form_docs(op: TransformOperation) -> TransformOperation {
 
 fn db_error() -> AppError {
     AppError::new("Could add image").with_status(StatusCode::SERVICE_UNAVAILABLE)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::{SocketAddr, TcpListener};
+
+    use aide::openapi::OpenApi;
+    use async_trait::async_trait;
+    use axum::{body::Body, http::Request};
+    use hyper::Method;
+    use mockall::mock;
+
+    use trillian::client::TrillianClientApiMethods;
+    use trillian::{TrillianLogLeaf, TrillianTree};
+
+    use crate::state::AppStateBuilder;
+
+    use super::*;
+
+    mock! {
+        pub TrillianClient {
+          fn get_leaf(&self) -> TrillianLogLeaf {
+            TrillianLogLeaf::default()
+        }
+        fn get_tree(&self) -> TrillianTree {
+            TrillianTree::default()
+        }
+      }
+    }
+
+    #[async_trait]
+    impl TrillianClientApiMethods for MockTrillianClient {
+        async fn add_leaf(
+            &mut self,
+            _id: &i64,
+            _data: &[u8],
+            _extra_data: &[u8],
+        ) -> Result<TrillianLogLeaf> {
+            Ok(self.get_leaf())
+        }
+        async fn create_tree(&mut self, _name: &str, _description: &str) -> Result<TrillianTree> {
+            Ok(self.get_tree())
+        }
+        async fn list_trees(&mut self) -> Result<Vec<TrillianTree>> {
+            Ok(vec![self.get_tree()])
+        }
+    }
+
+    impl Clone for MockTrillianClient {
+        fn clone(&self) -> Self {
+            MockTrillianClient::new()
+        }
+    }
+
+    async fn mock_state() -> AppState {
+        // TODO mock this as well
+        let database_url = "postgresql://root@localhost:26257/veracity?sslmode=disable";
+        AppStateBuilder::default()
+            .trillian(Box::from(MockTrillianClient::new()))
+            .trillian_host("http://localhost:8090".to_string())
+            .trillian_tree(0)
+            .create_postgres_client(database_url)
+            .build()
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn get_show_form() {
+        let addr = start_test_server().await;
+
+        let client = hyper::Client::new();
+
+        let response = client
+            .request(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(format!("http://{}/", addr))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        assert!(!body.is_empty());
+    }
+
+    #[tokio::test]
+    async fn does_not_exist() {
+        let addr = start_test_server().await;
+
+        let client = hyper::Client::new();
+
+        let response = client
+            .request(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(format!("http://{}/does-not-exist", addr))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    async fn start_test_server() -> SocketAddr {
+        let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let state = mock_state().await;
+
+        tokio::spawn(async move {
+            let mut api = OpenApi::default();
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app(&state).finish_api(&mut api).into_make_service())
+                .await
+                .unwrap();
+        });
+        addr
+    }
 }

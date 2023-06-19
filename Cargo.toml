@@ -29,9 +29,11 @@ byteorder = "1.4.3"
 chrono = "0.4.22"
 data-encoding = "2.4.0"
 derive_builder = "0.12.0"
+dyn-clone = "1.0.11"
 eyre = "0.6.8"
 futures = "0.3"
 hex = "0.4.3"
+hyper = { version = "0.14", features = ["full"] }
 image = { version = "0.24.6", features = ["jpeg_rayon"] }
 openssl = "0.10.41"
 postgres-openssl = "0.5.0"
@@ -46,6 +48,7 @@ thiserror = "1.0.40"
 tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = "0.7.2"
 tokio-util = { version = "0.7", features = ["io"] }
+tower-http = { version = "0.4.0", features = ["trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 trillian = { path = "./trillian" }
@@ -61,6 +64,8 @@ features = [
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
 glob = "0.3.1"
+mockall = { version = "0.11.4", features = ["nightly"] }
+tower = { version = "0.4", features = ["util"] }
 
 [[bench]]
 name = "hash_benchmark"

@@ -12,6 +12,7 @@ use axum::Extension;
 use eyre::{Report, Result};
 use tokio::signal;
 use tokio::time::Instant;
+use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
@@ -41,7 +42,7 @@ async fn main() -> Result<()> {
         error!("Could not get TRILLIAN_ADDRESS: {}", err);
         Report::from(err)
     })?;
-    let tree_id = env::var("TRILLIAN_TREE")
+    let tree_id = env::var("TRILLIAN_TREE_ID")
         .map_err(|err| {
             error!("Could not get TRILLIAN_TREE: {}", err);
             Report::from(err)
@@ -67,9 +68,7 @@ async fn main() -> Result<()> {
     // Ensure tables at startup as well as db connection works
     create_db_tables(&state).await;
 
-    let app = ApiRouter::new()
-        .nest_api_service("/", routes::server_routes(state.clone()))
-        .nest_api_service("/docs", docs_routes(state.clone()))
+    let app = app(&state)
         .finish_api_with(&mut api, api_docs)
         .layer(Extension(Arc::new(api)))
         .with_state(state);
@@ -88,6 +87,14 @@ async fn main() -> Result<()> {
         Err(e) => error!("Could not shutdown server: {}", e.to_string()),
     };
     Ok(())
+}
+
+fn app(state: &AppState) -> ApiRouter<AppState> {
+    ApiRouter::new()
+        .nest_api_service("/", routes::server_routes(state.clone()))
+        .nest_api_service("/docs", docs_routes(state.clone()))
+        // We can still add middleware
+        .layer(TraceLayer::new_for_http())
 }
 
 async fn create_db_tables(state: &AppState) {

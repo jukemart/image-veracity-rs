@@ -6,12 +6,13 @@ use eyre::{Error, Report, Result};
 use openssl::error::ErrorStack;
 use openssl::ssl::{SslConnector, SslMethod};
 use postgres_openssl::MakeTlsConnector;
-use tokio_postgres::config::Config;
+use tokio_postgres::Config;
 use tracing::{debug, error, instrument, trace};
 
-use trillian::client::TrillianClient;
+use trillian::client::{TrillianClient, TrillianClientApiMethods};
 
 pub type ConnectionPool = Pool<PostgresConnectionManager<MakeTlsConnector>>;
+pub type TrillianState = Box<dyn TrillianClientApiMethods + Send + Sync>;
 
 #[allow(dead_code)]
 #[derive(Builder, Clone)]
@@ -20,9 +21,8 @@ pub struct AppState {
     #[builder(try_setter, setter(into, name = "trillian_tree"))]
     pub trillian_tree: i64,
 
-    #[builder(setter(custom))]
-    pub trillian: TrillianClient,
-    #[builder(setter(custom))]
+    pub trillian: TrillianState,
+
     trillian_host: String,
 
     #[builder(setter(custom))]
@@ -41,7 +41,7 @@ impl AppStateBuilder {
 
     #[instrument(skip(self))]
     pub fn create_postgres_client(&mut self, host: &str) -> &mut Self {
-        let config = tokio_postgres::config::Config::from_str(host).expect("valid db url");
+        let mut config = Config::from_str(host).expect("valid db url");
         self.db_config = Some(config);
         self
     }
@@ -53,11 +53,6 @@ impl AppStateBuilder {
 
     #[instrument(skip(self))]
     pub async fn build(&mut self) -> Result<AppState> {
-        let host = self
-            .trillian_host
-            .replace("".to_string())
-            .expect("Trillian host address was supplied");
-
         let connector = match AppStateBuilder::ssl_config() {
             Ok(x) => x,
             Err(err) => return Err(Report::from(err)),
@@ -80,13 +75,21 @@ impl AppStateBuilder {
         debug!("Created DB connection pool");
         self.db_pool = Some(pool);
 
-        let trillian = TrillianClient::new(host)
-            .await
-            .expect("created trillian client")
-            .build();
+        // When we need to make out client
+        if self.trillian.is_none() {
+            let host = self
+                .trillian_host
+                .replace("".to_string())
+                .expect("Trillian host address was supplied");
 
-        debug!("Connected Trillian client");
-        self.trillian = Some(trillian);
+            let trillian = TrillianClient::new(host)
+                .await
+                .expect("created trillian client")
+                .build();
+
+            debug!("Connected Trillian client");
+            self.trillian = Some(Box::from(trillian));
+        }
 
         trace!("Created application state");
         match self.fallible_build() {

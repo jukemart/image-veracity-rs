@@ -2,6 +2,7 @@ use std::process;
 use std::time::Duration;
 
 use async_trait::async_trait;
+use dyn_clone::DynClone;
 use eyre::{Report, Result};
 use thiserror::Error;
 use tonic::transport::{Channel, Endpoint, Uri};
@@ -15,6 +16,7 @@ use crate::{
     protobuf::trillian::{
         CreateTreeRequest, ListTreesRequest, LogLeaf, QueueLeafRequest, Tree, TreeState, TreeType,
     },
+    TrillianLogLeaf, TrillianTree,
 };
 
 #[derive(Builder)]
@@ -219,8 +221,15 @@ pub enum TrillianClientError {
 }
 
 #[async_trait]
-pub trait TrillianClientApiMethods {
-    async fn add_leaf(&mut self, id: &i64, data: &[u8], extra_data: &[u8]) -> Result<LogLeaf>;
-    async fn create_tree(&mut self, name: &str, description: &str) -> Result<Tree>;
-    async fn list_trees(&mut self) -> Result<Vec<Tree>>;
+pub trait TrillianClientApiMethods: DynClone {
+    async fn add_leaf(
+        &mut self,
+        id: &i64,
+        data: &[u8],
+        extra_data: &[u8],
+    ) -> Result<TrillianLogLeaf>;
+    async fn create_tree(&mut self, name: &str, description: &str) -> Result<TrillianTree>;
+    async fn list_trees(&mut self) -> Result<Vec<TrillianTree>>;
 }
+
+dyn_clone::clone_trait_object!(TrillianClientApiMethods);
