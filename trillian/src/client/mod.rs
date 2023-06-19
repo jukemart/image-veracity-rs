@@ -1,6 +1,7 @@
 use std::process;
 use std::time::Duration;
 
+use async_trait::async_trait;
 use eyre::{Report, Result};
 use thiserror::Error;
 use tonic::transport::{Channel, Endpoint, Uri};
@@ -79,35 +80,34 @@ impl TrillianClient {
             log_client: Some(log_client),
         })
     }
+}
 
-    #[instrument(skip(self))]
-    pub async fn list_trees(&mut self) -> Result<Vec<Tree>> {
-        trace!("Creating list_tree_request");
-        let request = list_tree_request();
-
-        trace!("Sending request {:?}", request);
-        let response = match self.admin_client.list_trees(request).await {
+#[async_trait]
+impl TrillianClientApiMethods for TrillianClient {
+    async fn add_leaf(&mut self, id: &i64, data: &[u8], extra_data: &[u8]) -> Result<LogLeaf> {
+        let request = form_leaf(*id, data, extra_data);
+        let response = match self.log_client.queue_leaf(request).await {
             Ok(x) => {
-                trace!("Received response");
+                trace!("Received response {:?}", x);
                 x
             }
             Err(err) => {
-                error!("Could not list trees {:?}", err);
-                return Err(Report::from(err));
+                return Err(Report::from(TrillianClientError::BadStatus(err)));
             }
         };
+        let leaf = response.into_inner().queued_leaf.unwrap().leaf.unwrap();
 
-        let mut trees = vec![];
-        for tree_response in response.into_inner().tree {
-            // println!("{:#?}", tree_response);
-            trees.push(tree_response);
-        }
-        debug! {"{trees:?}"}
-        Ok(trees)
+        debug!(
+            "Queued leaf index: {}, Merkle hash:{:x?}, QueueTs:{:?} IntegrateTs:{:?}",
+            &leaf.leaf_index,
+            &leaf.leaf_identity_hash,
+            &leaf.queue_timestamp,
+            &leaf.integrate_timestamp
+        );
+        Ok(leaf)
     }
 
-    #[instrument(skip(self))]
-    pub async fn create_tree(&mut self, name: &str, description: &str) -> Result<Tree> {
+    async fn create_tree(&mut self, name: &str, description: &str) -> Result<Tree> {
         trace!("Creating create_tree_request");
         let request = create_tree_request(name, description);
 
@@ -144,33 +144,29 @@ impl TrillianClient {
         Ok(tree)
     }
 
-    #[instrument(skip(self))]
-    pub async fn add_leaf(
-        &mut self,
-        tree_id: &i64,
-        data: &[u8],
-        extra_data: &[u8],
-    ) -> Result<LogLeaf> {
-        let request = form_leaf(*tree_id, data, extra_data);
-        let response = match self.log_client.queue_leaf(request).await {
+    async fn list_trees(&mut self) -> Result<Vec<Tree>> {
+        trace!("Creating list_tree_request");
+        let request = list_tree_request();
+
+        trace!("Sending request {:?}", request);
+        let response = match self.admin_client.list_trees(request).await {
             Ok(x) => {
-                trace!("Received response {:?}", x);
+                trace!("Received response");
                 x
             }
             Err(err) => {
-                return Err(Report::from(TrillianClientError::BadStatus(err)));
+                error!("Could not list trees {:?}", err);
+                return Err(Report::from(err));
             }
         };
-        let leaf = response.into_inner().queued_leaf.unwrap().leaf.unwrap();
 
-        debug!(
-            "Queued leaf index: {}, Merkle hash:{:x?}, QueueTs:{:?} IntegrateTs:{:?}",
-            &leaf.leaf_index,
-            &leaf.leaf_identity_hash,
-            &leaf.queue_timestamp,
-            &leaf.integrate_timestamp
-        );
-        Ok(leaf)
+        let mut trees = vec![];
+        for tree_response in response.into_inner().tree {
+            // println!("{:#?}", tree_response);
+            trees.push(tree_response);
+        }
+        debug! {"{trees:?}"}
+        Ok(trees)
     }
 }
 
@@ -220,4 +216,11 @@ fn form_leaf(tree_id: i64, entry: &[u8], extra_data: &[u8]) -> Request<QueueLeaf
 pub enum TrillianClientError {
     #[error(transparent)]
     BadStatus(#[from] Status),
+}
+
+#[async_trait]
+pub trait TrillianClientApiMethods {
+    async fn add_leaf(&mut self, id: &i64, data: &[u8], extra_data: &[u8]) -> Result<LogLeaf>;
+    async fn create_tree(&mut self, name: &str, description: &str) -> Result<Tree>;
+    async fn list_trees(&mut self) -> Result<Vec<Tree>>;
 }

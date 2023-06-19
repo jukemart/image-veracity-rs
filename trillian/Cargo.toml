@@ -11,6 +11,7 @@ name = "trillian_client_cli"
 path = "src/main.rs"
 
 [dependencies]
+async-trait = "0.1.68"
 eyre = "0.6.8"
 thiserror = "1.0.40"
 clap = { version = "4.3", features = ["derive"] }
