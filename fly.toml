@@ -1,0 +1,29 @@
+# fly.toml app configuration file generated for image-veracity-log on 2023-06-20T11:54:15-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "image-veracity-log"
+primary_region = "bos"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[deploy]
+strategy = "immediate"
+
+[env]
+HOSTNAME = "https://image-veracity-log.fly.dev"
+LISTEN_ADDRESS = "0.0.0.0:8080"
+TRILLIAN_ADDRESS = "http://log-server.process.veracity-dev-trillian-log.internal:8090"
+TRILLIAN_TREE_ID = "4750379202396887956"
+DATABASE_URL = "postgresql://zaphod@veracity-dev-us-east-1-11356.7tt.cockroachlabs.cloud:26257/veracity?sslmode=require"
+DATABASE_ROOT_CERT_PATH = "/root.crt"
+
+[[mounts]]
+source = "imagedb"
+destination = "/data"
