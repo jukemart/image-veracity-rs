@@ -1,0 +1,69 @@
+[package]
+name = "image-veracity"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+trillian = { path = "../trillian" }
+aide = { version = "0.11.0", features = ["redoc",
+    "axum",
+    "axum-extra",
+    "axum-multipart",
+    "macros",
+    "serde_qs"
+] }
+async-trait = "0.1.57"
+axum = { version = "0.6.18", features = ["multipart", "macros", "query"] }
+axum-extra = "0.7.4"
+axum-jsonschema = { version = "0.6.0", features = ["aide"] }
+axum-macros = "0.3.7"
+base64 = "0.21.2"
+bb8 = "0.8.1"
+bb8-postgres = "0.8.1"
+blockhash = "0.5.0"
+byteorder = "1.4.3"
+chrono = "0.4.22"
+data-encoding = "2.4.0"
+derive_builder = "0.12.0"
+dyn-clone = "1.0.11"
+eyre = "0.6.8"
+futures = "0.3"
+hex = "0.4.3"
+hyper = { version = "0.14", features = ["full"] }
+image = { version = "0.24.6", features = ["jpeg_rayon"] }
+openssl = { version = "0.10.41", features = ["v111", "vendored"] }
+#openssl-sys = "0.9.88"
+openssl-src = { version = "111" }
+postgres-openssl = "0.5.0"
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_derive = "1.0"
+serde_json = "1.0"
+serde_qs = { version = "0.12.0", features = ["axum"]}
+rayon = "1.7.0"
+ring = "0.16.20"
+schemars = { version = "0.8.12", features = ["uuid1"] }
+thiserror = "1.0.40"
+tokio = { version = "1.0", features = ["full"] }
+tokio-postgres = "0.7.2"
+tokio-util = { version = "0.7", features = ["io"] }
+tower-http = { version = "0.4.0", features = ["trace", "cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.1.2", features = ["serde", "v4"] }
+
+[dependencies.postgres]
+version = "0.19.3"
+features = [
+    "with-uuid-1", "with-serde_json-1"
+]
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+glob = "0.3.1"
+mockall = { version = "0.11.4", features = ["nightly"] }
+tower = { version = "0.4", features = ["util"] }
+
+[[bench]]
+name = "hash_benchmark"
+harness = false
+path = "../../benches/hash_benchmark.rs"

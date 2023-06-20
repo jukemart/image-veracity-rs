@@ -1,3 +1,4 @@
+use std::env;
 use std::str::FromStr;
 
 use bb8::Pool;
@@ -42,12 +43,21 @@ impl AppStateBuilder {
     #[instrument(skip(self))]
     pub fn create_postgres_client(&mut self, host: &str) -> &mut Self {
         let mut config = Config::from_str(host).expect("valid db url");
+        config.application_name("image-veracity-api");
+        if let Ok(pwd) = env::var("DATABASE_PASSWORD") {
+            debug!("Setting DB password from environment variable");
+            config.password(pwd);
+        }
         self.db_config = Some(config);
         self
     }
 
     fn ssl_config() -> Result<MakeTlsConnector, ErrorStack> {
-        let builder = SslConnector::builder(SslMethod::tls())?;
+        let mut builder = SslConnector::builder(SslMethod::tls())?;
+        if let Ok(root_cert_path) = env::var("DATABASE_ROOT_CERT_PATH") {
+            debug!("Setting CA to path {}", root_cert_path);
+            builder.set_ca_file(root_cert_path)?;
+        }
         Ok(MakeTlsConnector::new(builder.build()))
     }
 
@@ -91,7 +101,7 @@ impl AppStateBuilder {
             self.trillian = Some(Box::from(trillian));
         }
 
-        trace!("Created application state");
+        debug!("Created application state");
         match self.fallible_build() {
             Ok(state) => Ok(state),
             Err(err) => Err(Error::from(err)),

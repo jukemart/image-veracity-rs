@@ -21,7 +21,7 @@ services:
   trillian-log-server:
     build:
       context: ../proto/trillian
-      dockerfile: ../../deploy/Dockerfile
+      dockerfile: Dockerfile
       args:
         - GOFLAGS
     command: [
@@ -43,7 +43,7 @@ services:
   trillian-log-signer:
     build:
       context: ../proto/trillian
-      dockerfile: ../../deploy/Dockerfile
+      dockerfile: Dockerfile
       args:
         - GOFLAGS
     command: [

@@ -84,3 +84,13 @@ GET {{address}}/images?p=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
     client.assert(body["error"] === "Invalid perceptual hash", "Response did not specify error");
   });
 %}
+
+### Get by legacy query param
+GET {{address}}/images?p=0x003f01ff01ff00ff00ff00ff00ff00ff06ff04fb047f043700ff187f007f207f
+
+
+> {%
+  client.test("Request executed successfully", function() {
+    client.assert(response.status === 200, "Did not have profile.jpg");
+  });
+%}

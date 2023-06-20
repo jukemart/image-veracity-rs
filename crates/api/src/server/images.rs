@@ -59,6 +59,13 @@ async fn get_image_by_params(
     }
     let p = qs.p.unwrap();
 
+    // TODO remove legacy support
+    let (_, p) = if p.starts_with("0x") {
+        p.split_at(2)
+    } else {
+        ("", p.as_str())
+    };
+
     let pool = db_pool.clone();
     let conn = match pool.get().await {
         Ok(conn) => conn,
@@ -68,7 +75,7 @@ async fn get_image_by_params(
         }
     };
     // create the accounts and get the IDs
-    let p_hash_hex: [u8; 32] = match <[u8; 32]>::from_hex(&p) {
+    let p_hash_hex: [u8; 32] = match <[u8; 32]>::from_hex(p) {
         Ok(x) => x,
         Err(err) => {
             return AppError::new("Invalid perceptual hash")

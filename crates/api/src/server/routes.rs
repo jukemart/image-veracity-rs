@@ -19,7 +19,7 @@ use crate::server::images;
 use crate::state::TrillianState;
 use crate::{extractors::Json, server, state::AppState};
 
-const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 5;
+const MAX_UPLOAD_SIZE: usize = 1024 * 1024 * 20;
 
 pub fn server_routes(state: AppState) -> ApiRouter {
     app(&state).nest_api_service("/images", images::image_routes(state))

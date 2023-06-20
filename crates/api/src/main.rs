@@ -10,8 +10,10 @@ use aide::{
 use axum::http::StatusCode;
 use axum::Extension;
 use eyre::{Report, Result};
+use hyper::Method;
 use tokio::signal;
 use tokio::time::Instant;
+use tower_http::cors::{any, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -44,12 +46,12 @@ async fn main() -> Result<()> {
     })?;
     let tree_id = env::var("TRILLIAN_TREE_ID")
         .map_err(|err| {
-            error!("Could not get TRILLIAN_TREE: {}", err);
+            error!("Could not get TRILLIAN_TREE_ID: {}", err);
             Report::from(err)
         })?
         .parse::<i64>()
         .map_err(|err| {
-            error!("Could not parse TRILLIAN_TREE: {}", err);
+            error!("Could not parse TRILLIAN_TREE_ID: {}", err);
             Report::from(err)
         })?;
 
@@ -74,7 +76,11 @@ async fn main() -> Result<()> {
         .with_state(state);
 
     // send it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = if let Ok(addr) = env::var("LISTEN_ADDRESS") {
+        addr.parse()?
+    } else {
+        SocketAddr::from(([127, 0, 0, 1], 3000))
+    };
     debug!("Listening on {}", addr);
     let startup_duration = start.elapsed();
     info!("Startup time: {:?}", startup_duration);

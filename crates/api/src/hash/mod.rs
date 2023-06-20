@@ -95,7 +95,7 @@ mod tests {
         ]);
         let known_hex = "9cfde03dc4198467ad671d171c071c5b1ff81bf919d9181838f8f890f807ff01";
 
-        let img = image::open("resources/test/test_495kb.png").unwrap();
+        let img = image::open("../../../resources/test/test_495kb.png").unwrap();
         let hash = blockhash256(&img);
 
         assert_eq!(hash, known_hash);
@@ -111,28 +111,28 @@ mod tests {
     #[test]
     fn blockhash_same_between_formats() {
         // baseline
-        let img_png = image::open("resources/test/test_495kb.png").unwrap();
+        let img_png = image::open("../../../resources/test/test_495kb.png").unwrap();
         let hash1 = blockhash256(&img_png);
 
-        let img_jpg = image::open("resources/test/test_from_495kb_png.jpg").unwrap();
+        let img_jpg = image::open("../../../resources/test/test_from_495kb_png.jpg").unwrap();
         let hash2 = blockhash256(&img_jpg);
 
         assert_eq!(hash1, hash2);
 
         // monochrome image
-        let img_png = image::open("resources/test/test_1050kb.png").unwrap();
+        let img_png = image::open("../../../resources/test/test_1050kb.png").unwrap();
         let hash1 = blockhash256(&img_png);
 
-        let img_jpg = image::open("resources/test/test_from_1050kb_png.jpg").unwrap();
+        let img_jpg = image::open("../../../resources/test/test_from_1050kb_png.jpg").unwrap();
         let hash2 = blockhash256(&img_jpg);
 
         assert_eq!(hash1, hash2);
 
         // large jpg -> larger png
-        let large_png = image::open("resources/test/test_from_2890kb_jpg.png").unwrap();
+        let large_png = image::open("../../../resources/test/test_from_2890kb_jpg.png").unwrap();
         let hash_large_png = blockhash256(&large_png);
 
-        let large_jpg = image::open("resources/test/test_2890kb.jpg").unwrap();
+        let large_jpg = image::open("../../../resources/test/test_2890kb.jpg").unwrap();
         let hash_large_jpg = blockhash256(&large_jpg);
 
         assert_eq!(hash_large_png, hash_large_jpg);
@@ -143,7 +143,7 @@ mod tests {
     fn crypto_persistent_hash() {
         let known_hash = "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U";
 
-        let img = image::open("resources/test/test_495kb.png").unwrap();
+        let img = image::open("../../../resources/test/test_495kb.png").unwrap();
         let crypt_hash: CryptographicHash = crypto_image(&img)
             .try_into()
             .expect("valid, decodable image");
@@ -171,7 +171,7 @@ mod tests {
         let actual = digest(&SHA256, &data);
         assert_eq!(&expected, &actual.as_ref());
 
-        let image = image::open("resources/test/test_495kb.png").unwrap();
+        let image = image::open("../../../resources/test/test_495kb.png").unwrap();
 
         // Expected hash created from the test_495kb.png using Golang:
         // ```golang

@@ -37,3 +37,11 @@ Ensure `protoc` is installed:
 ```shell
 protoc --version
 ```
+
+## Deploy
+
+Requires CockroachDB Serverless root.crt
+
+```shell
+ curl --create-dirs -o $HOME/.postgresql/root.crt 'https://cockroachlabs.cloud/clusters/ca35b4c6-ee3a-49a1-a3df-7e59712f2c57/cert'
+```
