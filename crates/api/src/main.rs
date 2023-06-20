@@ -106,8 +106,6 @@ fn app(state: &AppState) -> ApiRouter<AppState> {
     ApiRouter::new()
         .nest_api_service("/", routes::server_routes(state.clone()))
         .nest_api_service("/docs", docs_routes(state.clone()))
-        // We can still add middleware
-        .layer(TraceLayer::new_for_http())
 }
 
 async fn create_db_tables(state: &AppState) {

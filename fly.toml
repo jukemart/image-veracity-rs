@@ -13,6 +13,16 @@ primary_region = "bos"
   auto_start_machines = true
   min_machines_running = 0
 
+[checks]
+  [checks.http_healthcheck]
+    grace_period = "30s"
+    interval = "15s"
+    method = "get"
+    path = "/healthcheck"
+    port = 8080
+    timeout = "1s"
+    type = "http"
+
 [deploy]
 strategy = "immediate"
 

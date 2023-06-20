@@ -1,3 +1,4 @@
+use aide::axum::routing::get_with;
 use aide::{
     axum::{routing::post_with, ApiRouter, IntoApiResponse},
     transform::TransformOperation,
@@ -31,8 +32,31 @@ fn app(state: &AppState) -> ApiRouter {
             "/",
             post_with(accept_form, accept_form_docs).get_with(show_form, show_form_docs),
         )
+        .api_route("/healthcheck", get_with(healthcheck, healthcheck_docs))
         .layer(DefaultBodyLimit::max(MAX_UPLOAD_SIZE))
         .with_state(state.clone())
+}
+
+async fn healthcheck(State(AppState { db_pool, .. }): State<AppState>) -> impl IntoApiResponse {
+    let pool = db_pool.clone();
+    let conn = match pool.get().await {
+        Ok(conn) => conn,
+        Err(err) => {
+            error!("{}", err);
+            return db_error().into_response();
+        }
+    };
+
+    match conn.query("SELECT 1", &[]).await {
+        Ok(_) => (StatusCode::OK, "healthy").into_response(),
+        Err(_) => db_error().into_response(),
+    }
+}
+
+fn healthcheck_docs(op: TransformOperation) -> TransformOperation {
+    op.description("Healthcheck")
+        .response_with::<200, (), _>(|res| res.description("Application is healthy"))
+        .response_with::<503, (), _>(|res| res.description("Application is unhealthy"))
 }
 
 async fn show_form() -> Html<&'static str> {
