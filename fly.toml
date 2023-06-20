@@ -15,7 +15,7 @@ primary_region = "bos"
 
 [checks]
   [checks.http_healthcheck]
-    grace_period = "30s"
+    grace_period = "3s"
     interval = "15s"
     method = "get"
     path = "/healthcheck"
