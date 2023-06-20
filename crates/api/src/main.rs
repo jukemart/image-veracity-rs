@@ -70,8 +70,15 @@ async fn main() -> Result<()> {
     // Ensure tables at startup as well as db connection works
     create_db_tables(&state).await;
 
+    let cors = CorsLayer::new()
+        // allow any methods to access the resource
+        .allow_methods(Any)
+        // allow requests from any origin
+        .allow_origin(Any);
+
     let app = app(&state)
         .finish_api_with(&mut api, api_docs)
+        .layer(cors)
         .layer(Extension(Arc::new(api)))
         .with_state(state);
 
