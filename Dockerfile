@@ -40,5 +40,5 @@ CMD ["/app/target/release/image-veracity"]
 # Again, our final image is the same - a slim base and just our app
 FROM rust:1.70 AS app
 COPY --from=build /app/target/release/image-veracity /image-veracity
-COPY root.crt /root.crt
+COPY resources/deploy/root.crt /root.crt
 CMD ["/image-veracity"]
