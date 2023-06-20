@@ -8,7 +8,7 @@ use openssl::error::ErrorStack;
 use openssl::ssl::{SslConnector, SslMethod};
 use postgres_openssl::MakeTlsConnector;
 use tokio_postgres::Config;
-use tracing::{debug, error, instrument, trace};
+use tracing::{debug, error, instrument};
 
 use trillian::client::{TrillianClient, TrillianClientApiMethods};
 

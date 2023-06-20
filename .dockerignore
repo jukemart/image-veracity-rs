@@ -1,1 +1,4 @@
+# Explicitly do not send build targets -- bloats build context
+target/
+# Deploy files include local CRDB files
 crates/trillian/deploy/

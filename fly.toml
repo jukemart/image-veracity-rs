@@ -6,6 +6,10 @@
 app = "image-veracity-log"
 primary_region = "bos"
 
+kill_signal = "SIGTERM"
+# Aggressive kill because Axum hangs waiting for another inbound connection which takes minutes
+kill_timeout = 10
+
 [http_service]
   internal_port = 8080
   force_https = true
@@ -15,8 +19,8 @@ primary_region = "bos"
 
 [checks]
   [checks.http_healthcheck]
-    grace_period = "3s"
-    interval = "15s"
+    grace_period = "5s"
+    interval = "30s"
     method = "get"
     path = "/healthcheck"
     port = 8080

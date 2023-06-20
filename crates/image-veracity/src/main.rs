@@ -10,11 +10,9 @@ use aide::{
 use axum::http::StatusCode;
 use axum::Extension;
 use eyre::{Report, Result};
-use hyper::Method;
 use tokio::signal;
 use tokio::time::Instant;
-use tower_http::cors::{any, Any, CorsLayer};
-use tower_http::trace::TraceLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;

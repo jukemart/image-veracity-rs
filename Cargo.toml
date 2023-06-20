@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["crates/api", "crates/trillian"]
+members = ["crates/image-veracity", "crates/trillian"]
 
 [[bin]]
 name = "image-veracity"
-path = "crates/api/src/main.rs"
+path = "crates/image-veracity"

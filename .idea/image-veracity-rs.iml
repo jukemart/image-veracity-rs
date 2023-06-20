@@ -3,15 +3,9 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/crates/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/image-veracity/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/trillian/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/httpRequests" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
-      <excludeFolder url="file://$MODULE_DIR$/crates/trillian/deploy/crdb/data" />
-      <excludeFolder url="file://$MODULE_DIR$/crates/trillian/proto/googleapis" />
-      <excludeFolder url="file://$MODULE_DIR$/crates/trillian/proto/trillian" />
-      <excludeFolder url="file://$MODULE_DIR$/crates/trillian/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
