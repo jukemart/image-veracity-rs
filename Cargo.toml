@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["crates/image-veracity", "crates/trillian"]
+members = ["crates/image-veracity", "crates/smt", "crates/trillian"]
 
 [[bin]]
 name = "image-veracity"
