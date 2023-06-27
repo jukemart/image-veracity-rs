@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::Arc;
 
 type Byte = u8;
 
@@ -25,12 +26,22 @@ type Byte = u8;
 /// - path string contains 1 byte, which is [1010,1111].
 /// - last byte is [0010,0000]. Note the unset lower 5 bits.
 /// - bits is 3, so effectively only the upper 3 bits [001] of last are used.
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ID {
-    path: Box<[u8]>,
+    path: Arc<[u8]>,
     last: Byte,
     // Invariant: Lowest (8-bits) bits of the last byte are unset.
     bits: u8, // Invariant: 1 <= bits <= 8, or bits == 0 for the empty ID.
+}
+
+impl Default for ID {
+    fn default() -> Self {
+        ID {
+            path: Arc::from([]),
+            last: 0,
+            bits: 0,
+        }
+    }
 }
 
 impl ID {
@@ -60,7 +71,7 @@ impl ID {
         last &= !new_byte;
 
         ID {
-            path: Box::from(path),
+            path: Arc::from(path),
             last,
             bits,
         }
@@ -101,6 +112,15 @@ impl ID {
                 self.last
             };
             ID::new_masked_id(&self.path[..bytes], &last, tail_bits)
+        }
+    }
+
+    pub fn sibling(&self) -> ID {
+        let last = self.last ^ safe_shift_left(1, 8 - self.bits);
+        ID {
+            path: self.path.clone(),
+            last,
+            bits: self.bits,
         }
     }
 }
@@ -192,6 +212,7 @@ mod tests {
     fn id_comparison() {
         const TEST_BYTES: &[u8; 7] = b"\x0A\x0B\x0C\x0A\x0B\x0C\x01";
         let test_cases = vec![
+            // (description, id_original, id_compare, want)
             (
                 "all-same",
                 ID::new_id(TEST_BYTES, 56),
@@ -251,6 +272,7 @@ mod tests {
         const TEST_BYTES: &[u8; 3] = &[5_u8, 1_u8, 127_u8];
 
         let test_cases = vec![
+            // (bits, want)
             (0, "[]"),
             (1, "[0]"),
             (4, "[0000]"),
@@ -273,6 +295,7 @@ mod tests {
         const TEST_BYTES: &[u8; 3] = b"\x0A\x0B\x0C";
 
         let test_cases = vec![
+            // (id, bits, want)
             (ID::new_id(TEST_BYTES, 24), 0, ID::default()),
             (ID::new_id(TEST_BYTES, 24), 1, ID::new_id(TEST_BYTES, 1)),
             (ID::new_id(TEST_BYTES, 24), 2, ID::new_id(TEST_BYTES, 2)),
@@ -289,6 +312,38 @@ mod tests {
                 got, want,
                 "Prefix bits={}: got {}, want {}",
                 bits, got, want
+            );
+        }
+    }
+
+    #[test]
+    fn id_sibling() {
+        const TEST_BYTES: &[u8; 3] = b"\x0A\x0B\x0C";
+
+        let test_cases = vec![
+            // (id, want)
+            (ID::new_id(TEST_BYTES, 0), ID::default()),
+            (ID::new_id(TEST_BYTES, 1), ID::new_id(b"\xA0", 1)),
+            (ID::new_id(TEST_BYTES, 2), ID::new_id(b"\x40", 2)),
+            (ID::new_id(TEST_BYTES, 8), ID::new_id(b"\x0B", 8)),
+            (ID::new_id(TEST_BYTES, 24), ID::new_id(b"\x0A\x0B\x0D", 24)),
+        ];
+
+        for (index, (id1, want)) in test_cases.iter().enumerate() {
+            let sibling = id1.sibling();
+            let got = &sibling;
+            assert_eq!(
+                *got, *want,
+                "Sibling #{}: got {}, want {}",
+                index, got, want
+            );
+            // The sibling's sibling is the original node
+            let got = &sibling.sibling();
+            let want = id1;
+            assert_eq!(
+                *got, *want,
+                "Sibling's sibling #{}: got {}, want {}",
+                index, got, want
             );
         }
     }
