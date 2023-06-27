@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/image-veracity/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/trillian/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/smt/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

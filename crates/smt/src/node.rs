@@ -83,6 +83,26 @@ impl ID {
     pub fn bit_length(&self) -> usize {
         self.path.len() * 8 + self.bits as usize
     }
+
+    /// Prefix reutrns the prefix of the node ID with the given number of bits.
+    pub fn prefix(&self, bits: usize) -> ID {
+        // Note: This code is very similar to NewID, and it's tempting to return
+        // NewID(n.path, bits). But there is a difference: NewID expects all the
+        // bytes to be in the path string, while here the last byte is not.
+        if bits == 0 {
+            ID::default()
+        } else if bits > self.bit_length() {
+            panic!("Prefix: bits {} > {}", bits, self.bit_length())
+        } else {
+            let (bytes, tail_bits) = split(bits);
+            let last = if bytes != self.path.len() {
+                self.path[bytes]
+            } else {
+                self.last
+            };
+            ID::new_masked_id(&self.path[..bytes], &last, tail_bits)
+        }
+    }
 }
 
 impl Display for ID {
@@ -245,6 +265,31 @@ mod tests {
             let id = ID::new_id(TEST_BYTES, bits);
             let got = id.to_string();
             assert_eq!(got, want, "String: got {}, want {}", got, want);
+        }
+    }
+
+    #[test]
+    fn id_prefix() {
+        const TEST_BYTES: &[u8; 3] = b"\x0A\x0B\x0C";
+
+        let test_cases = vec![
+            (ID::new_id(TEST_BYTES, 24), 0, ID::default()),
+            (ID::new_id(TEST_BYTES, 24), 1, ID::new_id(TEST_BYTES, 1)),
+            (ID::new_id(TEST_BYTES, 24), 2, ID::new_id(TEST_BYTES, 2)),
+            (ID::new_id(TEST_BYTES, 24), 5, ID::new_id(TEST_BYTES, 5)),
+            (ID::new_id(TEST_BYTES, 24), 8, ID::new_id(TEST_BYTES, 8)),
+            (ID::new_id(TEST_BYTES, 24), 15, ID::new_id(TEST_BYTES, 15)),
+            (ID::new_id(TEST_BYTES, 24), 24, ID::new_id(TEST_BYTES, 24)),
+            (ID::new_id(TEST_BYTES, 21), 15, ID::new_id(TEST_BYTES, 15)),
+        ];
+
+        for (id, bits, want) in test_cases {
+            let got = id.prefix(bits);
+            assert_eq!(
+                got, want,
+                "Prefix bits={}: got {}, want {}",
+                bits, got, want
+            );
         }
     }
 }
