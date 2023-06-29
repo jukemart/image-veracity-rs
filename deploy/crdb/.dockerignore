@@ -1,0 +1,4 @@
+# Explicitly do not send build targets -- bloats build context
+data/
+# Deploy files include local db files and other non-build targets
+docker-entry-point-initdb.d/

@@ -81,10 +81,54 @@ pub enum HashError {
 #[cfg(test)]
 mod tests {
     use blockhash::Blockhash256;
+    use eyre::Result;
     use image::EncodableLayout;
     use ring::test;
+    use std::fs;
+    use std::path::PathBuf;
 
     use super::*;
+
+    const IMAGE_PATH: &str = "resources/test";
+
+    use std::{env, process::Command};
+
+    /// Get the absolute path from the Cargo workspace root for project-level resources
+    pub fn get_workspace_root() -> Result<PathBuf> {
+        let current_dir = env::current_dir()?;
+        let cmd_output = Command::new("cargo")
+            .args(["metadata", "--format-version=1"])
+            .output()?;
+
+        if !cmd_output.status.success() {
+            return Ok(current_dir);
+        }
+
+        let json = serde_json::from_str::<serde_json::Value>(
+            String::from_utf8(cmd_output.stdout)?.as_str(),
+        )?;
+        let path = match json.get("workspace_root") {
+            Some(val) => match val.as_str() {
+                Some(val) => val,
+                None => return Ok(current_dir),
+            },
+            None => return Ok(current_dir),
+        };
+        Ok(fs::canonicalize(PathBuf::from(path)).unwrap())
+    }
+
+    fn get_test_image(image_name: &str) -> DynamicImage {
+        let image_path = get_workspace_root()
+            .expect("workspace should have a root")
+            .join(format!("{}/{}", IMAGE_PATH, image_name));
+
+        match image::open(&image_path) {
+            Ok(img) => img,
+            Err(err) => {
+                panic!("could not get image from {:?} err: {:?}", &image_path, err)
+            }
+        }
+    }
 
     #[test]
     fn blockhash_persistent_hash() {
@@ -95,7 +139,7 @@ mod tests {
         ]);
         let known_hex = "9cfde03dc4198467ad671d171c071c5b1ff81bf919d9181838f8f890f807ff01";
 
-        let img = image::open("../../../resources/test/test_495kb.png").unwrap();
+        let img = get_test_image("test_495kb.png");
         let hash = blockhash256(&img);
 
         assert_eq!(hash, known_hash);
@@ -111,28 +155,28 @@ mod tests {
     #[test]
     fn blockhash_same_between_formats() {
         // baseline
-        let img_png = image::open("../../../resources/test/test_495kb.png").unwrap();
+        let img_png = get_test_image("test_495kb.png");
         let hash1 = blockhash256(&img_png);
 
-        let img_jpg = image::open("../../../resources/test/test_from_495kb_png.jpg").unwrap();
+        let img_jpg = get_test_image("test_from_495kb_png.jpg");
         let hash2 = blockhash256(&img_jpg);
 
         assert_eq!(hash1, hash2);
 
         // monochrome image
-        let img_png = image::open("../../../resources/test/test_1050kb.png").unwrap();
+        let img_png = get_test_image("test_1050kb.png");
         let hash1 = blockhash256(&img_png);
 
-        let img_jpg = image::open("../../../resources/test/test_from_1050kb_png.jpg").unwrap();
+        let img_jpg = get_test_image("test_from_1050kb_png.jpg");
         let hash2 = blockhash256(&img_jpg);
 
         assert_eq!(hash1, hash2);
 
         // large jpg -> larger png
-        let large_png = image::open("../../../resources/test/test_from_2890kb_jpg.png").unwrap();
+        let large_png = get_test_image("test_from_2890kb_jpg.png");
         let hash_large_png = blockhash256(&large_png);
 
-        let large_jpg = image::open("../../../resources/test/test_2890kb.jpg").unwrap();
+        let large_jpg = get_test_image("test_2890kb.jpg");
         let hash_large_jpg = blockhash256(&large_jpg);
 
         assert_eq!(hash_large_png, hash_large_jpg);
@@ -143,7 +187,7 @@ mod tests {
     fn crypto_persistent_hash() {
         let known_hash = "oY1OmtqoZ32_nUVGgKzmAAdn6Bo0ndvr-YhnDRYju4U";
 
-        let img = image::open("../../../resources/test/test_495kb.png").unwrap();
+        let img = get_test_image("test_495kb.png");
         let crypt_hash: CryptographicHash = crypto_image(&img)
             .try_into()
             .expect("valid, decodable image");
@@ -171,7 +215,7 @@ mod tests {
         let actual = digest(&SHA256, &data);
         assert_eq!(&expected, &actual.as_ref());
 
-        let image = image::open("../../../resources/test/test_495kb.png").unwrap();
+        let image = get_test_image("test_495kb.png");
 
         // Expected hash created from the test_495kb.png using Golang:
         // ```golang

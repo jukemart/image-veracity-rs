@@ -3,8 +3,7 @@ use std::io::{BufReader, Read};
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, SamplingMode};
 use glob::glob;
-
-use image_veracity::hash::hash_image;
+use image_veracity_api::hash::hash_image;
 
 fn jpg_benchmark(c: &mut Criterion) {
     let group_name = "hashing_jpg";

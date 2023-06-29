@@ -10,7 +10,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Now add the local Trillian repo, which typically isn't cacheable.
-COPY . .
+COPY /home/jkmart/git/google/trillian .
 
 # Build the server.
 RUN go install ./cmd/trillian_log_server
@@ -26,3 +26,5 @@ FROM gcr.io/distroless/base
 COPY --from=build /go/bin/trillian_log_server /
 COPY --from=build /go/bin/trillian_log_signer /
 COPY --from=build /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
+
+COPY ../../resources/crdb/root.crt /root.crt

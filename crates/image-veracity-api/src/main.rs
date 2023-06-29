@@ -17,8 +17,8 @@ use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
 
-use image_veracity::state::{AppState, AppStateBuilder};
-use image_veracity::{docs::docs_routes, errors::AppError, extractors::Json, server::routes};
+use image_veracity_api::state::{AppState, AppStateBuilder};
+use image_veracity_api::{docs::docs_routes, errors::AppError, extractors::Json, server::routes};
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::Arc;
 
@@ -41,6 +42,26 @@ impl Default for ID {
             last: 0,
             bits: 0,
         }
+    }
+}
+
+/// IDs are ordered first by the "full-bytes" path, then by their last bits
+impl PartialOrd for ID {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Compare the "full bytes" path which handles all but the last bits case
+        match self.path.cmp(&other.path) {
+            x @ Ordering::Greater | x @ Ordering::Less => Some(x),
+            // Matching full bytes, compare the last bits
+            Ordering::Equal => Some(self.last.cmp(&other.last)),
+        }
+    }
+}
+
+/// IDs support total ordering
+impl Ord for ID {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Unwrap because we support total ordering
+        self.partial_cmp(&other).unwrap()
     }
 }
 
@@ -122,6 +143,10 @@ impl ID {
             last,
             bits: self.bits,
         }
+    }
+
+    pub fn full_bytes(&self) -> Arc<[u8]> {
+        self.path.clone()
     }
 }
 

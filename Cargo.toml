@@ -1,11 +1,3 @@
-[package]
-name = "image_veracity"
-version = "0.1.0"
-edition = "2021"
-
 [workspace]
-members = ["crates/image-veracity", "crates/smt", "crates/trillian"]
-
-[[bin]]
-name = "image-veracity"
-path = "crates/image-veracity"
+members = ["crates/image-veracity-api", "crates/smt", "crates/trillian"]
+resolver = "2"

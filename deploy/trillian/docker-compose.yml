@@ -20,8 +20,8 @@ services:
       - --insecure
   trillian-log-server:
     build:
-      context: ../proto/trillian
-      dockerfile: Dockerfile
+      context: ./google-trillian
+      dockerfile: ../Dockerfile
       args:
         - GOFLAGS
     command: [
@@ -42,8 +42,8 @@ services:
       - roach-single
   trillian-log-signer:
     build:
-      context: ../proto/trillian
-      dockerfile: Dockerfile
+      context: ./google-trillian
+      dockerfile: ../Dockerfile
       args:
         - GOFLAGS
     command: [

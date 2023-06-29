@@ -1,4 +1,5 @@
 mod node;
+mod tile;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
