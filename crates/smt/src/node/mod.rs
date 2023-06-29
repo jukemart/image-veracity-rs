@@ -7,7 +7,7 @@ pub(crate) mod id;
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Node {
-    id: ID,
+    pub(crate) id: ID,
     // Using fixed-size hash value instead of generic type or GAT
     hash: Arc<[u8; 32]>,
 }
@@ -40,7 +40,7 @@ impl Ord for Node {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct NodesRow(Vec<Arc<Node>>);
+pub struct NodesRow(pub Vec<Arc<Node>>);
 
 impl NodesRow {
     pub fn try_new(mut nodes: Vec<Arc<Node>>) -> Result<Self, String> {
@@ -55,7 +55,7 @@ impl NodesRow {
     }
 
     /// in_subtree returns whether all nodes in this row are strictly under the node with the given ID
-    pub fn in_subtree(&self, root: ID) -> bool {
+    pub fn in_subtree(&self, root: &ID) -> bool {
         let root_length = root.bit_length();
         if self
             .0
@@ -67,7 +67,7 @@ impl NodesRow {
         if self
             .0
             .first()
-            .is_some_and(|n| n.id.prefix(root_length) != root)
+            .is_some_and(|n| n.id.prefix(root_length) != *root)
         {
             return false;
         }
@@ -76,7 +76,11 @@ impl NodesRow {
             || self
                 .0
                 .last()
-                .is_some_and(|n| n.id.prefix(root_length) == root)
+                .is_some_and(|n| n.id.prefix(root_length) == *root)
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
