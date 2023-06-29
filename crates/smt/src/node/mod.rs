@@ -1,33 +1,49 @@
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 use crate::node::id::ID;
 
 pub(crate) mod id;
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Node<'a> {
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct Node {
     id: ID,
     // Using fixed-size hash value instead of generic type or GAT
-    hash: &'a [u8; 32],
+    hash: Arc<[u8; 32]>,
 }
 
-impl<'a> PartialOrd for Node<'a> {
+impl Node {
+    pub fn new_from_id(id: ID) -> Self {
+        Node {
+            id,
+            ..Node::default()
+        }
+    }
+    pub fn new(id: ID, hash: [u8; 32]) -> Self {
+        Node {
+            id,
+            hash: Arc::from(hash),
+        }
+    }
+}
+
+impl PartialOrd for Node {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.id.partial_cmp(&other.id)
     }
 }
 
-impl<'a> Ord for Node<'a> {
+impl Ord for Node {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
     }
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct NodesRow<'a>(Vec<Node<'a>>);
+pub struct NodesRow(Vec<Arc<Node>>);
 
-impl<'a> NodesRow<'a> {
-    pub fn try_new(mut nodes: Vec<Node<'a>>) -> Result<Self, String> {
+impl NodesRow {
+    pub fn try_new(mut nodes: Vec<Arc<Node>>) -> Result<Self, String> {
         if nodes.is_empty() {
             Ok(NodesRow(nodes))
         } else {
@@ -65,7 +81,7 @@ impl<'a> NodesRow<'a> {
 }
 
 /// mutably filters, sorts, and de-dupes in preparation for HStar3 algorithm
-pub fn prepare(nodes: &mut Vec<Node>, depth: usize) -> Result<(), String> {
+pub fn prepare(nodes: &mut Vec<Arc<Node>>, depth: usize) -> Result<(), String> {
     for (index, node) in nodes.iter().enumerate() {
         if node.id.bit_length() != depth {
             return Err(format!(
@@ -93,47 +109,24 @@ mod tests {
             // sorted
             (
                 vec![
-                    Node {
-                        id: ID::new_id(b"\x00\x01", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x00", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x02", 16),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(b"\x00\x01", 16)),
+                    Node::new_from_id(ID::new_id(b"\x00\x00", 16)),
+                    Node::new_from_id(ID::new_id(b"\x00\x02", 16)),
                 ],
-                NodesRow(vec![
-                    Node {
-                        id: ID::new_id(b"\x00\x00", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x01", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x02", 16),
-                        hash: &[0; 32],
-                    },
-                ]),
+                NodesRow::try_new(vec![
+                    Arc::from(Node::new_from_id(ID::new_id(b"\x00\x00", 16))),
+                    Arc::from(Node::new_from_id(ID::new_id(b"\x00\x01", 16))),
+                    Arc::from(Node::new_from_id(ID::new_id(b"\x00\x02", 16))),
+                ])
+                .expect("creating NodesRow"),
                 false,
                 "no error",
             ),
             // depth error
             (
                 vec![
-                    Node {
-                        id: ID::new_id(b"\x00\x00", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x00\x01", 24),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(b"\x00\x00", 16)),
+                    Node::new_from_id(ID::new_id(b"\x00\x00\x01", 24)),
                 ],
                 NodesRow(vec![]),
                 true,
@@ -142,26 +135,25 @@ mod tests {
             // dupe ID
             (
                 vec![
-                    Node {
-                        id: ID::new_id(b"\x00\x01", 16),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(b"\x00\x01", 16),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(b"\x00\x01", 16)),
+                    Node::new_from_id(ID::new_id(b"\x00\x01", 16)),
                 ],
-                NodesRow(vec![Node {
-                    id: ID::new_id(b"\x00\x01", 16),
-                    hash: &[0; 32],
-                }]),
+                NodesRow::try_new(vec![Arc::from(Node::new_from_id(ID::new_id(
+                    b"\x00\x01",
+                    16,
+                )))])
+                .expect("creating NodesRow"),
                 false,
                 "no error",
             ),
         ];
 
         for (nodes, want, want_error, want_err_str) in test_cases {
-            match NodesRow::try_new(nodes) {
+            let mut arc_nodes = Vec::new();
+            for node in nodes {
+                arc_nodes.push(Arc::from(node));
+            }
+            match NodesRow::try_new(arc_nodes) {
                 Ok(got) => {
                     assert_eq!(
                         got, want,
@@ -212,59 +204,32 @@ mod tests {
             1_u8, 1_u8, 1_u8, 1_u8,
         ];
 
-        let test_cases: Vec<(&str, Vec<Node<'a>>, Vec<Node<'a>>, &str)> = vec![
+        let test_cases = vec![
             (
                 "depth-err",
-                vec![Node {
-                    id: ID::new_id(TEST_BYTES_1, 256).prefix(10),
-                    hash: &[0; 32],
-                }],
+                vec![Node::new_from_id(ID::new_id(TEST_BYTES_1, 256).prefix(10))],
                 vec![],
                 "invalid depth",
             ),
             (
                 "dupe-1",
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
                 ],
-                vec![Node {
-                    id: ID::new_id(TEST_BYTES_1, 256),
-                    hash: &[0; 32],
-                }],
+                vec![Node::new_from_id(ID::new_id(TEST_BYTES_1, 256))],
                 "",
             ),
             (
                 "dupe-2",
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
                 ],
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
                 ],
                 "",
             ),
@@ -272,88 +237,48 @@ mod tests {
             (
                 "ok-1",
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_4, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_3, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_4, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_3, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
                 ],
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_3, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_4, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_3, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_4, 256)),
                 ],
                 "",
             ),
             (
                 "ok-2",
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_3, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_4, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_3, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_4, 256)),
                 ],
                 vec![
-                    Node {
-                        id: ID::new_id(TEST_BYTES_1, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_2, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_3, 256),
-                        hash: &[0; 32],
-                    },
-                    Node {
-                        id: ID::new_id(TEST_BYTES_4, 256),
-                        hash: &[0; 32],
-                    },
+                    Node::new_from_id(ID::new_id(TEST_BYTES_1, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_2, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_3, 256)),
+                    Node::new_from_id(ID::new_id(TEST_BYTES_4, 256)),
                 ],
                 "",
             ),
         ];
 
         for (desc, mut nodes, want, want_err) in test_cases {
-            match prepare(&mut nodes, 256) {
+            let mut arc_nodes = Vec::new();
+            for node in nodes {
+                arc_nodes.push(Arc::from(node));
+            }
+            match prepare(&mut arc_nodes, 256) {
                 Ok(_) => {
+                    let mut arc_want = Vec::new();
+                    for node in want {
+                        arc_want.push(Arc::from(node));
+                    }
                     assert!(
                         want_err.is_empty(),
                         "{} NodesRow prepare expected error {}",
@@ -361,9 +286,9 @@ mod tests {
                         want_err
                     );
                     assert_eq!(
-                        nodes, want,
+                        arc_nodes, arc_want,
                         "{} NodesRow prepare got {:?}, want {:?}",
-                        desc, nodes, want
+                        desc, arc_nodes, arc_want
                     );
                 }
                 Err(err) => {
