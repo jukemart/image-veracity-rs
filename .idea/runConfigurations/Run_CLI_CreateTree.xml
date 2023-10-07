@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run CLI CreateTree" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package trillian --bin trillian_client_cli -- --address http://localhost:8090 admin create-tree -n &quot;Image Veracity&quot; -d &quot;Verifiable Hashes for Images&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+    <option name="command" value="run -- --address http://localhost:8090 admin create-tree -n &quot;Image Veracity&quot; -d &quot;Verifiable Hashes for Images&quot;" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/crates/trillian" />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="true" />

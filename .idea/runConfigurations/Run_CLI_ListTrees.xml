@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run CLI ListTrees" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package trillian --bin trillian_client_cli -- --address http://localhost:8090 admin list-trees" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+    <option name="command" value="run -- --address http://localhost:8090 admin list-trees" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/crates/trillian" />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="true" />

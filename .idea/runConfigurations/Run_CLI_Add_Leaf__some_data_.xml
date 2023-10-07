@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run CLI Add Leaf (some data)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package trillian --bin trillian_client_cli -- --address http://localhost:8090 client add-leaf --tree-id 4938350244366803007 -d &quot;Some data&quot;" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+    <option name="command" value="run  -- --address http://localhost:8090 client add-leaf --tree-id ${TREE_ID} -d &quot;Some data&quot;" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/crates/trillian" />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="true" />
@@ -9,7 +9,9 @@
     <option name="withSudo" value="false" />
     <option name="buildTarget" value="REMOTE" />
     <option name="backtrace" value="SHORT" />
-    <envs />
+    <envs>
+      <env name="TREE_ID" value="4543585941269728968" />
+    </envs>
     <option name="isRedirectInput" value="false" />
     <option name="redirectInputPath" value="" />
     <method v="2">
