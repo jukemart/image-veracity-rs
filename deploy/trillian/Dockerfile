@@ -10,7 +10,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Now add the local Trillian repo, which typically isn't cacheable.
-COPY /home/jkmart/git/google/trillian .
+# Use a git submodule or manual dir placement
+COPY ./trillian .
 
 # Build the server.
 RUN go install ./cmd/trillian_log_server

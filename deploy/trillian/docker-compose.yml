@@ -19,11 +19,7 @@ services:
       - --http-addr=roach-single:8081
       - --insecure
   trillian-log-server:
-    build:
-      context: ./google-trillian
-      dockerfile: ../Dockerfile
-      args:
-        - GOFLAGS
+    image: jukemart/trillian:20231007
     command: [
       "/trillian_log_server",
       "--storage_system=crdb",
@@ -41,11 +37,7 @@ services:
     depends_on:
       - roach-single
   trillian-log-signer:
-    build:
-      context: ./google-trillian
-      dockerfile: ../Dockerfile
-      args:
-        - GOFLAGS
+    image: jukemart/trillian:20231007
     command: [
       "/trillian_log_signer",
       "--storage_system=crdb",
